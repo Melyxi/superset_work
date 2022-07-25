@@ -69,11 +69,11 @@ function getSortTypeByDataType(dataType: GenericDataType): DefaultSortTypes {
  * Cell background to render columns as horizontal bar chart
  */
 function cellBar({
-                   value,
-                   valueRange,
-                   colorPositiveNegative = false,
-                   alignPositiveNegative,
-                 }: {
+  value,
+  valueRange,
+  colorPositiveNegative = false,
+  alignPositiveNegative,
+}: {
   value: number;
   valueRange: ValueRange;
   colorPositiveNegative: boolean;
@@ -130,10 +130,10 @@ function SearchInput({ count, value, onChange }: SearchInputProps) {
 }
 
 function SelectPageSize({
-                          options,
-                          current,
-                          onChange,
-                        }: SelectPageSizeRendererProps) {
+  options,
+  current,
+  onChange,
+}: SelectPageSizeRendererProps) {
   return (
     <span className="dt-select-page-size form-inline">
       {t('page_size.show')}{' '}
@@ -221,21 +221,21 @@ export default function TableChart<D extends DataRecord = DataRecord>(
             groupBy.length === 0
               ? []
               : groupBy.map(col => {
-                const val = ensureIsArray(filters?.[col]);
-                if (!val.length)
+                  const val = ensureIsArray(filters?.[col]);
+                  if (!val.length)
+                    return {
+                      col,
+                      op: 'IS NULL',
+                    };
                   return {
                     col,
-                    op: 'IS NULL',
+                    op: 'IN',
+                    val: val.map(el =>
+                      el instanceof Date ? el.getTime() : el!,
+                    ),
+                    grain: col === DTTM_ALIAS ? timeGrain : undefined,
                   };
-                return {
-                  col,
-                  op: 'IN',
-                  val: val.map(el =>
-                    el instanceof Date ? el.getTime() : el!,
-                  ),
-                  grain: col === DTTM_ALIAS ? timeGrain : undefined,
-                };
-              }),
+                }),
         },
         filterState: {
           label: labelElements.join(', '),
@@ -309,8 +309,8 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     const textAlign = config.horizontalAlign
       ? config.horizontalAlign
       : isNumeric
-        ? 'right'
-        : 'left';
+      ? 'right'
+      : 'left';
 
     return {
       textAlign,
@@ -414,11 +414,11 @@ export default function TableChart<D extends DataRecord = DataRecord>(
               fontSize: font,
               background: valueRange
                 ? cellBar({
-                  value: value as number,
-                  valueRange,
-                  alignPositiveNegative,
-                  colorPositiveNegative,
-                })
+                    value: value as number,
+                    valueRange,
+                    alignPositiveNegative,
+                    colorPositiveNegative,
+                  })
                 : undefined,
             },
           };
