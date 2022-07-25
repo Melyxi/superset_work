@@ -67,7 +67,6 @@ export const getColorFunction = (
 ) => {
   let minOpacity = MIN_OPACITY_BOUNDED;
   const maxOpacity = MAX_OPACITY;
-  console.log(onStyle);
   let comparatorFunction: (
     value: number,
     allValues: number[],
@@ -488,7 +487,6 @@ export const getColorFormatters = memoizeOne(
             ),
           });
         }
-        console.log(config, 'acc', data);
         return acc;
       },
       [],

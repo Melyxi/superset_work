@@ -208,15 +208,6 @@ export const FormattingPopoverContent = ({
   const colorScheme = colorSchemeOptions(theme);
   const styleScheme = styleSchemeOptions(theme);
   const onStyle = false;
-  console.log(
-    '111',
-    styleScheme[0],
-    onStyle,
-    typeof onStyle,
-    onChange,
-    config,
-    '2222222222############',
-  );
 
   return (
     <Form
