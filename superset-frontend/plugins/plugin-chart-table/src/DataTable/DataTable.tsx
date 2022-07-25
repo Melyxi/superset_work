@@ -29,7 +29,6 @@ import {
   usePagination,
   useSortBy,
   useGlobalFilter,
-  useColumnOrder,
   PluginHook,
   TableOptions,
   FilterType,
@@ -37,7 +36,6 @@ import {
   Row,
 } from 'react-table';
 import { matchSorter, rankings } from 'match-sorter';
-import { typedMemo } from '@superset-ui/core';
 import GlobalFilter, { GlobalFilterProps } from './components/GlobalFilter';
 import SelectPageSize, {
   SelectPageSizeProps,
@@ -58,6 +56,8 @@ export interface DataTableProps<D extends object> extends TableOptions<D> {
   width?: string | number;
   height?: string | number;
   serverPagination?: boolean;
+  tableTransparent?: boolean;
+  hideHeader?: boolean;
   onServerPaginationChange: (pageNumber: number, pageSize: number) => void;
   serverPaginationData: { pageSize?: number; currentPage?: number };
   pageSize?: number;
@@ -65,7 +65,6 @@ export interface DataTableProps<D extends object> extends TableOptions<D> {
   sticky?: boolean;
   rowCount: number;
   wrapperRef?: MutableRefObject<HTMLDivElement>;
-  onColumnOrderChange: () => void;
 }
 
 export interface RenderHTMLCellProps extends HTMLProps<HTMLTableCellElement> {
@@ -77,11 +76,13 @@ const sortTypes = {
 };
 
 // Be sure to pass our updateMyData and the skipReset option
-export default typedMemo(function DataTable<D extends object>({
+export default function DataTable<D extends object>({
   tableClassName,
   columns,
   data,
   serverPaginationData,
+  tableTransparent,
+  hideHeader,
   width: initialWidth = '100%',
   height: initialHeight = 300,
   pageSize: initialPageSize = 0,
@@ -97,14 +98,12 @@ export default typedMemo(function DataTable<D extends object>({
   hooks,
   serverPagination,
   wrapperRef: userWrapperRef,
-  onColumnOrderChange,
   ...moreUseTableOptions
 }: DataTableProps<D>): JSX.Element {
   const tableHooks: PluginHook<D>[] = [
     useGlobalFilter,
     useSortBy,
     usePagination,
-    useColumnOrder,
     doSticky ? useSticky : [],
     hooks || [],
   ].flat();
@@ -129,7 +128,7 @@ export default typedMemo(function DataTable<D extends object>({
   const defaultGetTableSize = useCallback(() => {
     if (wrapperRef.current) {
       // `initialWidth` and `initialHeight` could be also parameters like `100%`
-      // `Number` returns `NaN` on them, then we fallback to computed size
+      // `Number` reaturns `NaN` on them, then we fallback to computed size
       const width = Number(initialWidth) || wrapperRef.current.clientWidth;
       const height =
         (Number(initialHeight) || wrapperRef.current.clientHeight) -
@@ -176,8 +175,6 @@ export default typedMemo(function DataTable<D extends object>({
     setGlobalFilter,
     setPageSize: setPageSize_,
     wrapStickyTable,
-    setColumnOrder,
-    allColumns,
     state: { pageIndex, pageSize, globalFilter: filterValue, sticky = {} },
   } = useTable<D>(
     {
@@ -216,37 +213,17 @@ export default typedMemo(function DataTable<D extends object>({
   }
 
   const shouldRenderFooter = columns.some(x => !!x.Footer);
-
-  let columnBeingDragged = -1;
-
-  const onDragStart = (e: React.DragEvent) => {
-    const el = e.target as HTMLTableCellElement;
-    columnBeingDragged = allColumns.findIndex(
-      col => col.id === el.dataset.columnName,
-    );
-    e.dataTransfer.setData('text/plain', `${columnBeingDragged}`);
-  };
-
-  const onDrop = (e: React.DragEvent) => {
-    const el = e.target as HTMLTableCellElement;
-    const newPosition = allColumns.findIndex(
-      col => col.id === el.dataset.columnName,
-    );
-
-    if (newPosition !== -1) {
-      const currentCols = allColumns.map(c => c.id);
-      const colToBeMoved = currentCols.splice(columnBeingDragged, 1);
-      currentCols.splice(newPosition, 0, colToBeMoved[0]);
-      setColumnOrder(currentCols);
-      // toggle value in TableChart to trigger column width recalc
-      onColumnOrderChange();
-    }
-    e.preventDefault();
-  };
+  const transparentTableLayout: CSSProperties = tableTransparent
+    ? { background: 'transparent', opacity: '1.0' }
+    : {};
+  const hideHeaderLayout: CSSProperties = hideHeader ? { display: 'none' } : {};
 
   const renderTable = () => (
-    <table {...getTableProps({ className: tableClassName })}>
-      <thead>
+    <table
+      {...getTableProps({ className: tableClassName })}
+      style={transparentTableLayout}
+    >
+      <thead style={hideHeaderLayout}>
         {headerGroups.map(headerGroup => {
           const { key: headerGroupKey, ...headerGroupProps } =
             headerGroup.getHeaderGroupProps();
@@ -256,8 +233,6 @@ export default typedMemo(function DataTable<D extends object>({
                 column.render('Header', {
                   key: column.id,
                   ...column.getSortByToggleProps(),
-                  onDragStart,
-                  onDrop,
                 }),
               )}
             </tr>
@@ -323,7 +298,7 @@ export default typedMemo(function DataTable<D extends object>({
   let resultCurrentPage = pageIndex;
   let resultOnPageChange: (page: number) => void = gotoPage;
   if (serverPagination) {
-    const serverPageSize = serverPaginationData?.pageSize ?? initialPageSize;
+    const serverPageSize = serverPaginationData.pageSize ?? initialPageSize;
     resultPageCount = Math.ceil(rowCount / serverPageSize);
     if (!Number.isFinite(resultPageCount)) {
       resultPageCount = 0;
@@ -335,10 +310,11 @@ export default typedMemo(function DataTable<D extends object>({
     if (foundPageSizeIndex === -1) {
       resultCurrentPageSize = 0;
     }
-    resultCurrentPage = serverPaginationData?.currentPage ?? 0;
+    resultCurrentPage = serverPaginationData.currentPage ?? 0;
     resultOnPageChange = (pageNumber: number) =>
       onServerPaginationChange(pageNumber, serverPageSize);
   }
+
   return (
     <div
       ref={wrapperRef}
@@ -390,4 +366,4 @@ export default typedMemo(function DataTable<D extends object>({
       ) : null}
     </div>
   );
-});
+}

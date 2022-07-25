@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React, { CSSProperties, useCallback, useMemo, useState } from 'react';
+import React, { CSSProperties, useCallback, useMemo } from 'react';
 import {
   ColumnInstance,
   ColumnWithLooseAccessor,
@@ -33,7 +33,6 @@ import {
   ensureIsArray,
   GenericDataType,
   getTimeFormatterForGranularity,
-  styled,
   t,
   tn,
 } from '@superset-ui/core';
@@ -70,11 +69,11 @@ function getSortTypeByDataType(dataType: GenericDataType): DefaultSortTypes {
  * Cell background to render columns as horizontal bar chart
  */
 function cellBar({
-  value,
-  valueRange,
-  colorPositiveNegative = false,
-  alignPositiveNegative,
-}: {
+                   value,
+                   valueRange,
+                   colorPositiveNegative = false,
+                   alignPositiveNegative,
+                 }: {
   value: number;
   valueRange: ValueRange;
   colorPositiveNegative: boolean;
@@ -131,10 +130,10 @@ function SearchInput({ count, value, onChange }: SearchInputProps) {
 }
 
 function SelectPageSize({
-  options,
-  current,
-  onChange,
-}: SelectPageSizeRendererProps) {
+                          options,
+                          current,
+                          onChange,
+                        }: SelectPageSizeRendererProps) {
   return (
     <span className="dt-select-page-size form-inline">
       {t('page_size.show')}{' '}
@@ -162,9 +161,6 @@ function SelectPageSize({
   );
 }
 
-const getNoResultsMessage = (filter: string) =>
-  t(filter ? 'No matching records found' : 'No records found');
-
 export default function TableChart<D extends DataRecord = DataRecord>(
   props: TableChartTransformedProps<D> & {
     sticky?: DataTableProps<D>['sticky'];
@@ -187,20 +183,18 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     serverPaginationData,
     setDataMask,
     showCellBars = true,
+    tableTransparent = true,
+    hideHeader = true,
     emitFilter = false,
     sortDesc = false,
     filters,
     sticky = true, // whether to use sticky header
     columnColorFormatters,
-    allowRearrangeColumns = false,
   } = props;
   const timestampFormatter = useCallback(
     value => getTimeFormatterForGranularity(timeGrain)(value),
     [timeGrain],
   );
-
-  // keep track of whether column order changed, so that column widths can too
-  const [columnOrderToggle, setColumnOrderToggle] = useState(false);
 
   const handleChange = useCallback(
     (filters: { [x: string]: DataRecordValue[] }) => {
@@ -227,21 +221,21 @@ export default function TableChart<D extends DataRecord = DataRecord>(
             groupBy.length === 0
               ? []
               : groupBy.map(col => {
-                  const val = ensureIsArray(filters?.[col]);
-                  if (!val.length)
-                    return {
-                      col,
-                      op: 'IS NULL',
-                    };
+                const val = ensureIsArray(filters?.[col]);
+                if (!val.length)
                   return {
                     col,
-                    op: 'IN',
-                    val: val.map(el =>
-                      el instanceof Date ? el.getTime() : el!,
-                    ),
-                    grain: col === DTTM_ALIAS ? timeGrain : undefined,
+                    op: 'IS NULL',
                   };
-                }),
+                return {
+                  col,
+                  op: 'IN',
+                  val: val.map(el =>
+                    el instanceof Date ? el.getTime() : el!,
+                  ),
+                  grain: col === DTTM_ALIAS ? timeGrain : undefined,
+                };
+              }),
         },
         filterState: {
           label: labelElements.join(', '),
@@ -315,8 +309,9 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     const textAlign = config.horizontalAlign
       ? config.horizontalAlign
       : isNumeric
-      ? 'right'
-      : 'left';
+        ? 'right'
+        : 'left';
+
     return {
       textAlign,
     };
@@ -325,13 +320,13 @@ export default function TableChart<D extends DataRecord = DataRecord>(
   const getColumnConfigs = useCallback(
     (column: DataColumnMeta, i: number): ColumnWithLooseAccessor<D> => {
       const { key, label, isNumeric, dataType, isMetric, config = {} } = column;
+      const isFilter = !isNumeric && emitFilter;
       const columnWidth = Number.isNaN(Number(config.columnWidth))
         ? config.columnWidth
         : Number(config.columnWidth);
-
+      const columnColor = config.backgroundColor;
       // inline style for both th and td cell
       const sharedStyle: CSSProperties = getSharedStyle(column);
-
       const alignPositiveNegative =
         config.alignPositiveNegative === undefined
           ? defaultAlignPN
@@ -340,8 +335,6 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         config.colorPositiveNegative === undefined
           ? defaultColorPN
           : config.colorPositiveNegative;
-
-      const { truncateLongCells } = config;
 
       const hasColumnColorFormatters =
         isNumeric &&
@@ -355,9 +348,8 @@ export default function TableChart<D extends DataRecord = DataRecord>(
           : config.showCellBars) &&
         (isMetric || isRawRecords) &&
         getValueRange(key, alignPositiveNegative);
-
       let className = '';
-      if (emitFilter) {
+      if (isFilter) {
         className += ' dt-is-filter';
       }
 
@@ -370,8 +362,8 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         Cell: ({ value }: { value: DataRecordValue }) => {
           const [isHtml, text] = formatColumnValue(column, value);
           const html = isHtml ? { __html: text } : undefined;
-
           let backgroundColor;
+          let font: string | undefined;
           if (hasColumnColorFormatters) {
             columnColorFormatters!
               .filter(formatter => formatter.column === column.key)
@@ -379,29 +371,34 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                 const formatterResult = formatter.getColorFromValue(
                   value as number,
                 );
-                if (formatterResult) {
+                const styleFormatterResult:
+                  | { color: string; fontSize: string }
+                  | undefined = formatter.getStyleFromValue(value as number);
+
+                const onStyleFormatterResult = formatter.getOnStyleFromValue(
+                  value as number,
+                );
+
+                if (onStyleFormatterResult === true) {
+                  if (styleFormatterResult) {
+                    backgroundColor = styleFormatterResult.color;
+                    font = styleFormatterResult.fontSize;
+                  }
+                } else if (formatterResult) {
                   backgroundColor = formatterResult;
+                  if (tableTransparent) {
+                    backgroundColor = backgroundColor.replace(
+                      /0\.[0-9]+/,
+                      '1.0',
+                    );
+                  }
                 }
               });
           }
-
-          const StyledCell = styled.td`
-            text-align: ${sharedStyle.textAlign};
-            background: ${backgroundColor ||
-            (valueRange
-              ? cellBar({
-                  value: value as number,
-                  valueRange,
-                  alignPositiveNegative,
-                  colorPositiveNegative,
-                })
-              : undefined)};
-            white-space: ${value instanceof Date ? 'nowrap' : undefined};
-          `;
-
           const cellProps = {
             // show raw number in title in case of numeric values
             title: typeof value === 'number' ? String(value) : undefined,
+            bgcolor: columnColor,
             onClick:
               emitFilter && !valueRange
                 ? () => toggleFilter(key, value)
@@ -411,41 +408,29 @@ export default function TableChart<D extends DataRecord = DataRecord>(
               value == null ? 'dt-is-null' : '',
               isActiveFilterValue(key, value) ? ' dt-is-active-filter' : '',
             ].join(' '),
+            style: {
+              ...sharedStyle,
+              color: backgroundColor,
+              fontSize: font,
+              background: valueRange
+                ? cellBar({
+                  value: value as number,
+                  valueRange,
+                  alignPositiveNegative,
+                  colorPositiveNegative,
+                })
+                : undefined,
+            },
           };
           if (html) {
-            if (truncateLongCells) {
-              // eslint-disable-next-line react/no-danger
-              return (
-                <StyledCell {...cellProps}>
-                  <div
-                    className="dt-truncate-cell"
-                    style={columnWidth ? { width: columnWidth } : undefined}
-                    dangerouslySetInnerHTML={html}
-                  />
-                </StyledCell>
-              );
-            }
             // eslint-disable-next-line react/no-danger
-            return <StyledCell {...cellProps} dangerouslySetInnerHTML={html} />;
+            return <td {...cellProps} dangerouslySetInnerHTML={html} />;
           }
           // If cellProps renderes textContent already, then we don't have to
           // render `Cell`. This saves some time for large tables.
-          return (
-            <StyledCell {...cellProps}>
-              {truncateLongCells ? (
-                <div
-                  className="dt-truncate-cell"
-                  style={columnWidth ? { width: columnWidth } : undefined}
-                >
-                  {text}
-                </div>
-              ) : (
-                text
-              )}
-            </StyledCell>
-          );
+          return <td {...cellProps}>{text}</td>;
         },
-        Header: ({ column: col, onClick, style, onDragStart, onDrop }) => (
+        Header: ({ column: col, onClick, style }) => (
           <th
             title="Shift + Click to sort by multiple columns"
             className={[className, col.isSorted ? 'is-sorted' : ''].join(' ')}
@@ -454,14 +439,6 @@ export default function TableChart<D extends DataRecord = DataRecord>(
               ...style,
             }}
             onClick={onClick}
-            data-column-name={col.id}
-            {...(allowRearrangeColumns && {
-              draggable: 'true',
-              onDragStart,
-              onDragOver: e => e.preventDefault(),
-              onDragEnter: e => e.preventDefault(),
-              onDrop,
-            })}
           >
             {/* can't use `columnWidth &&` because it may also be zero */}
             {config.columnWidth ? (
@@ -474,13 +451,12 @@ export default function TableChart<D extends DataRecord = DataRecord>(
               />
             ) : null}
             <div
-              data-column-name={col.id}
               css={{
                 display: 'inline-flex',
-                alignItems: 'flex-end',
+                alignItems: 'center',
               }}
             >
-              <span data-column-name={col.id}>{label}</span>
+              <span>{label}</span>
               <SortIcon column={col} />
             </div>
           </th>
@@ -506,11 +482,12 @@ export default function TableChart<D extends DataRecord = DataRecord>(
       isActiveFilterValue,
       isRawRecords,
       showCellBars,
+      tableTransparent,
+      hideHeader,
       sortDesc,
       toggleFilter,
       totals,
       columnColorFormatters,
-      columnOrderToggle,
     ],
   );
 
@@ -519,12 +496,12 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     [columnsMeta, getColumnConfigs],
   );
 
-  const handleServerPaginationChange = useCallback(
-    (pageNumber: number, pageSize: number) => {
-      updateExternalFormData(setDataMask, pageNumber, pageSize);
-    },
-    [setDataMask],
-  );
+  const handleServerPaginationChange = (
+    pageNumber: number,
+    pageSize: number,
+  ) => {
+    updateExternalFormData(setDataMask, pageNumber, pageSize);
+  };
 
   return (
     <Styles>
@@ -532,18 +509,25 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         columns={columns}
         data={data}
         rowCount={rowCount}
-        tableClassName="table table-striped table-condensed"
+        tableClassName={
+          tableTransparent
+            ? 'table table-condensed'
+            : 'table table-striped table-condensed'
+        }
         pageSize={pageSize}
         serverPaginationData={serverPaginationData}
         pageSizeOptions={pageSizeOptions}
         width={width}
         height={height}
         serverPagination={serverPagination}
+        tableTransparent={tableTransparent}
+        hideHeader={hideHeader}
         onServerPaginationChange={handleServerPaginationChange}
-        onColumnOrderChange={() => setColumnOrderToggle(!columnOrderToggle)}
         // 9 page items in > 340px works well even for 100+ pages
         maxPageItemCount={width > 340 ? 9 : 7}
-        noResults={getNoResultsMessage}
+        noResults={(filter: string) =>
+          t(filter ? 'No matching records found' : 'No records found')
+        }
         searchInput={includeSearch && SearchInput}
         selectPageSize={pageSize !== null && SelectPageSize}
         // not in use in Superset, but needed for unit tests

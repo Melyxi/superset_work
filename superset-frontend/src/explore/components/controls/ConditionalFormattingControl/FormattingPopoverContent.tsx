@@ -23,11 +23,13 @@ import Select from 'src/components/Select/Select';
 import { Col, Row } from 'src/components';
 import { InputNumber } from 'src/components/Input';
 import Button from 'src/components/Button';
+// import { ControlFormItemSpec } from 'packages/superset-ui-chart-controls/src/components/ControlForm';
 import {
   COMPARATOR,
   ConditionalFormattingConfig,
   MULTIPLE_VALUE_COMPARATORS,
 } from './types';
+import CheckboxControl from '../CheckboxControl';
 
 const FullWidthInputNumber = styled(InputNumber)`
   width: 100%;
@@ -42,6 +44,20 @@ const colorSchemeOptions = (theme: SupersetTheme) => [
   { value: theme.colors.success.light1, label: t('green') },
   { value: theme.colors.alert.light1, label: t('yellow') },
   { value: theme.colors.error.light1, label: t('red') },
+  { value: theme.colors.primary.dark1, label: t('blue') },
+];
+
+const styleSchemeOptions = (theme: SupersetTheme) => [
+  {
+    value: theme.styles.style1.name,
+    data: theme.styles.style1,
+    label: t('style1'),
+  },
+  {
+    value: theme.styles.style2.name,
+    data: theme.styles.style2,
+    label: t('style2'),
+  },
 ];
 
 const operatorOptions = [
@@ -190,6 +206,18 @@ export const FormattingPopoverContent = ({
 }) => {
   const theme = useTheme();
   const colorScheme = colorSchemeOptions(theme);
+  const styleScheme = styleSchemeOptions(theme);
+  const onStyle = false;
+  console.log(
+    '111',
+    styleScheme[0],
+    onStyle,
+    typeof onStyle,
+    onChange,
+    config,
+    '2222222222############',
+  );
+
   return (
     <Form
       onFinish={onChange}
@@ -216,6 +244,23 @@ export const FormattingPopoverContent = ({
             initialValue={colorScheme[0].value}
           >
             <Select ariaLabel={t('Color scheme')} options={colorScheme} />
+          </FormItem>
+          <FormItem
+            name="onStyle"
+            id="onStyle"
+            label={t('ON STYLE')}
+            initialValue={onStyle}
+          >
+            <CheckboxControl aria-label="My Value" checked={onStyle} />
+          </FormItem>
+
+          <FormItem
+            name="styleScheme"
+            label={t('style scheme')}
+            rules={rulesRequired}
+            initialValue={styleScheme[0].value}
+          >
+            <Select ariaLabel={t('Color scheme')} options={styleScheme} />
           </FormItem>
         </Col>
       </Row>

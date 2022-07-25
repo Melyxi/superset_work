@@ -17,6 +17,7 @@
  * under the License.
  */
 import tinycolor from 'tinycolor2';
+import { supersetTheme } from '@superset-ui/core';
 
 const rgbRegex = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/;
 export function getContrastingColor(color: string, thresholds = 186) {
@@ -74,7 +75,11 @@ export function getAnalogousColors(colors: string[], results: number) {
   return generatedColors;
 }
 
-export function addAlpha(color: string, opacity: number): string {
+export function addAlpha(
+  color: string,
+  // style: string | number | undefined,
+  opacity: number,
+): string {
   // opacity value should be between 0 and 1.
   if (opacity > 1 || opacity < 0) {
     throw new Error(`The opacity should between 0 and 1, but got: ${opacity}`);
@@ -83,6 +88,17 @@ export function addAlpha(color: string, opacity: number): string {
   const alpha = `0${Math.round(opacity * 255)
     .toString(16)
     .toUpperCase()}`.slice(-2);
-
   return `${color}${alpha}`;
+}
+
+export function getStyle(style: string | number, opacity: number) {
+  // opacity value should be between 0 and 1.
+  if (opacity > 1 || opacity < 0) {
+    throw new Error(`The opacity should between 0 and 1, but got: ${opacity}`);
+  }
+  // the alpha value is between 00 - FF
+  // const alpha = `0${Math.round(opacity * 255)
+  //   .toString(16)
+  //   .toUpperCase()}`.slice(-2);
+  return supersetTheme.styles[style];
 }

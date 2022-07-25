@@ -67,15 +67,16 @@ export type TableChartFormData = QueryFormData & {
   all_columns?: QueryFormMetric[] | null;
   order_desc?: boolean;
   show_cell_bars?: boolean;
+  table_transparent?: boolean;
+  hide_header?: boolean;
   table_timestamp_format?: string;
   emit_filter?: boolean;
   time_grain_sqla?: TimeGranularity;
   column_config?: Record<string, ColumnConfig>;
-  allow_rearrange_columns?: boolean;
 };
 
 export interface TableChartProps extends ChartProps {
-  ownCurrentState?: {
+  ownCurrentState: {
     pageSize?: number;
     currentPage?: number;
   };
@@ -99,6 +100,8 @@ export interface TableChartTransformedProps<D extends DataRecord = DataRecord> {
   percentMetrics?: (keyof D)[];
   pageSize?: number;
   showCellBars?: boolean;
+  tableTransparent?: boolean;
+  hideHeader?: boolean;
   sortDesc?: boolean;
   includeSearch?: boolean;
   alignPositiveNegative?: boolean;
@@ -110,7 +113,6 @@ export interface TableChartTransformedProps<D extends DataRecord = DataRecord> {
   emitFilter?: boolean;
   onChangeFilter?: ChartProps['hooks']['onAddFilter'];
   columnColorFormatters?: ColorFormatters;
-  allowRearrangeColumns?: boolean;
 }
 
 export default {};

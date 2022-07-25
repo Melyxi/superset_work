@@ -43,11 +43,10 @@ import {
   ControlPanelState,
   ExtraControlProps,
   ControlState,
-  emitFilterControl,
   Dataset,
-  ColumnMeta,
   defineSavedMetrics,
-  getStandardizedControls,
+  ColumnMeta,
+  emitFilterControl,
 } from '@superset-ui/chart-controls';
 
 import i18n from './i18n';
@@ -121,7 +120,6 @@ const all_columns: typeof sharedControls.groupby = {
         : [],
   }),
   visibility: isRawMode,
-  resetOnHide: false,
 };
 
 const dnd_all_columns: typeof sharedControls.groupby = {
@@ -145,7 +143,6 @@ const dnd_all_columns: typeof sharedControls.groupby = {
     return newState;
   },
   visibility: isRawMode,
-  resetOnHide: false,
 };
 
 const percent_metrics: typeof sharedControls.metrics = {
@@ -156,7 +153,6 @@ const percent_metrics: typeof sharedControls.metrics = {
   ),
   multi: true,
   visibility: isAggMode,
-  resetOnHide: false,
   mapStateToProps: ({ datasource, controls }, controlState) => ({
     columns: datasource?.columns || [],
     savedMetrics: defineSavedMetrics(datasource),
@@ -197,7 +193,6 @@ const config: ControlPanelConfig = {
             name: 'groupby',
             override: {
               visibility: isAggMode,
-              resetOnHide: false,
               mapStateToProps: (
                 state: ControlPanelState,
                 controlState: ControlState,
@@ -228,7 +223,6 @@ const config: ControlPanelConfig = {
             override: {
               validators: [],
               visibility: isAggMode,
-              resetOnHide: false,
               mapStateToProps: (
                 { controls, datasource, form_data }: ControlPanelState,
                 controlState: ControlState,
@@ -276,7 +270,6 @@ const config: ControlPanelConfig = {
             name: 'timeseries_limit_metric',
             override: {
               visibility: isAggMode,
-              resetOnHide: false,
             },
           },
           {
@@ -317,7 +310,6 @@ const config: ControlPanelConfig = {
           {
             name: 'row_limit',
             override: {
-              default: 1000,
               visibility: ({ controls }: ControlPanelsContainerProps) =>
                 !controls?.server_pagination?.value,
             },
@@ -347,7 +339,6 @@ const config: ControlPanelConfig = {
               ),
               default: false,
               visibility: isAggMode,
-              resetOnHide: false,
             },
           },
           {
@@ -358,7 +349,6 @@ const config: ControlPanelConfig = {
               default: true,
               description: t('Whether to sort descending or ascending'),
               visibility: isAggMode,
-              resetOnHide: false,
             },
           },
         ],
@@ -373,7 +363,6 @@ const config: ControlPanelConfig = {
                 'Show total aggregations of selected metrics. Note that row limit does not apply to the result.',
               ),
               visibility: isAggMode,
-              resetOnHide: false,
             },
           },
         ],
@@ -433,7 +422,7 @@ const config: ControlPanelConfig = {
               type: 'CheckboxControl',
               label: t('Cell bars'),
               renderTrigger: true,
-              default: true,
+              default: false,
               description: t(
                 'Whether to display a bar chart background in table columns',
               ),
@@ -459,23 +448,9 @@ const config: ControlPanelConfig = {
               type: 'CheckboxControl',
               label: t('Color +/-'),
               renderTrigger: true,
-              default: true,
-              description: t(
-                'Whether to colorize numeric values by if they are positive or negative',
-              ),
-            },
-          },
-        ],
-        [
-          {
-            name: 'allow_rearrange_columns',
-            config: {
-              type: 'CheckboxControl',
-              label: t('Allow columns to be rearranged'),
-              renderTrigger: true,
               default: false,
               description: t(
-                "Allow end user to drag-and-drop column headers to rearrange them. Note their changes won't persist for the next time they open the chart.",
+                'Whether to colorize numeric values by if they are positive or negative',
               ),
             },
           },
@@ -543,14 +518,46 @@ const config: ControlPanelConfig = {
             },
           },
         ],
+        [<h1 className="section-header">{t('Custom view')}</h1>],
+        [
+          {
+            name: 'hideHeader',
+            config: {
+              type: 'CheckboxControl',
+              label: t("Hide widget's header"),
+              renderTrigger: true,
+              default: false,
+              description: t("Show or not widget's header"),
+            },
+          },
+        ],
+        [
+          {
+            name: 'table_transparent',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Transparent background'),
+              default: false,
+              description: t('Make transparent background for table'),
+              renderTrigger: true,
+            },
+          },
+        ],
+        [
+          {
+            name: 'hide_header',
+            config: {
+              type: 'CheckboxControl',
+              label: t('Hide table header'),
+              default: false,
+              description: t('Hide table columns header'),
+              renderTrigger: true,
+            },
+          },
+        ],
       ],
     },
   ],
-  formDataOverrides: formData => ({
-    ...formData,
-    metrics: getStandardizedControls().popAllMetrics(),
-    groupby: getStandardizedControls().popAllColumns(),
-  }),
 };
 
 export default config;

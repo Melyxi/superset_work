@@ -28,6 +28,7 @@ import type {
   QueryFormData,
   QueryFormMetric,
   QueryResponse,
+  GenericDataType,
 } from '@superset-ui/core';
 import { sharedControls } from './shared-controls';
 import sharedControlComponents from './shared-controls/components';
@@ -66,6 +67,7 @@ export interface Dataset {
   id: number;
   type: DatasourceType;
   columns: ColumnMeta[];
+  column_types?: GenericDataType[];
   metrics: Metric[];
   column_format: Record<string, string>;
   verbose_map: Record<string, string>;
@@ -79,6 +81,7 @@ export interface Dataset {
   description: string | null;
   uid?: string;
   owners?: Owner[];
+  table_name?: string;
 }
 
 export interface ControlPanelState {
@@ -193,8 +196,8 @@ export type TabOverride = 'data' | 'customize' | boolean;
  *    show a warning based on the value of another component. It's also possible to bind
  *    arbitrary data from the redux store to the component this way.
  * - tabOverride: set to 'data' if you want to force a renderTrigger to show up on the `Data`
-     tab, or 'customize' if you want it to show up on that tam. Otherwise sections with ALL
-     `renderTrigger: true` components will show up on the `Customize` tab.
+ tab, or 'customize' if you want it to show up on that tam. Otherwise sections with ALL
+ `renderTrigger: true` components will show up on the `Customize` tab.
  * - visibility: a function that uses control panel props to check whether a control should
  *    be visibile.
  */
@@ -438,11 +441,15 @@ export type ConditionalFormattingConfig = {
   targetValueRight?: number;
   column?: string;
   colorScheme?: string;
+  styleScheme?: string | number | undefined;
+  onStyle: boolean | undefined;
 };
 
 export type ColorFormatters = {
   column: string;
   getColorFromValue: (value: number) => string | undefined;
+  getStyleFromValue: (value: number) => any | undefined;
+  getOnStyleFromValue: (value: number) => any | undefined;
 }[];
 
 export default {};

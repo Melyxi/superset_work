@@ -17,7 +17,7 @@
  * under the License.
  */
 import memoizeOne from 'memoize-one';
-import { addAlpha, DataRecord } from '@superset-ui/core';
+import { addAlpha, getStyle, DataRecord } from '@superset-ui/core';
 import {
   ColorFormatters,
   COMPARATOR,
@@ -46,7 +46,7 @@ export const getOpacity = (
     round(
       Math.abs(
         ((maxOpacity - minOpacity) / (extremeValue - cutoffPoint)) *
-          (value - cutoffPoint),
+        (value - cutoffPoint),
       ) + minOpacity,
       2,
     ),
@@ -60,19 +60,26 @@ export const getColorFunction = (
     targetValueLeft,
     targetValueRight,
     colorScheme,
+    styleScheme,
+    onStyle,
   }: ConditionalFormattingConfig,
   columnValues: number[],
 ) => {
   let minOpacity = MIN_OPACITY_BOUNDED;
   const maxOpacity = MAX_OPACITY;
-
+  console.log(onStyle);
   let comparatorFunction: (
     value: number,
     allValues: number[],
   ) => false | { cutoffValue: number; extremeValue: number };
-  if (operator === undefined || colorScheme === undefined) {
+  if (
+    operator === undefined ||
+    colorScheme === undefined ||
+    styleScheme === undefined
+  ) {
     return () => undefined;
   }
+
   if (
     MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
     (targetValueLeft === undefined || targetValueRight === undefined)
@@ -176,10 +183,276 @@ export const getColorFunction = (
     const compareResult = comparatorFunction(value, columnValues);
     if (compareResult === false) return undefined;
     const { cutoffValue, extremeValue } = compareResult;
+    // eslint-disable-next-line no-param-reassign
     return addAlpha(
       colorScheme,
       getOpacity(value, cutoffValue, extremeValue, minOpacity, maxOpacity),
     );
+  };
+};
+
+export const getStyleFunction = (
+  {
+    operator,
+    targetValue,
+    targetValueLeft,
+    targetValueRight,
+    colorScheme,
+    styleScheme,
+  }: ConditionalFormattingConfig,
+  columnValues: number[],
+) => {
+  let minOpacity = MIN_OPACITY_BOUNDED;
+  const maxOpacity = MAX_OPACITY;
+
+  let comparatorFunction: (
+    value: number,
+    allValues: number[],
+  ) => false | { cutoffValue: number; extremeValue: number };
+  if (
+    operator === undefined ||
+    colorScheme === undefined ||
+    styleScheme === undefined
+  ) {
+    return () => undefined;
+  }
+
+  if (
+    MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    (targetValueLeft === undefined || targetValueRight === undefined)
+  ) {
+    return () => undefined;
+  }
+  if (
+    operator !== COMPARATOR.NONE &&
+    !MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    targetValue === undefined
+  ) {
+    return () => undefined;
+  }
+  switch (operator) {
+    case COMPARATOR.NONE:
+      minOpacity = MIN_OPACITY_UNBOUNDED;
+      comparatorFunction = (value: number, allValues: number[]) => {
+        const cutoffValue = Math.min(...allValues);
+        const extremeValue = Math.max(...allValues);
+        return value >= cutoffValue && value <= extremeValue
+          ? { cutoffValue, extremeValue }
+          : false;
+      };
+      break;
+    case COMPARATOR.GREATER_THAN:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value > targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.max(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.LESS_THAN:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value < targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.min(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.GREATER_OR_EQUAL:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value >= targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.max(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.LESS_OR_EQUAL:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value <= targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.min(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.EQUAL:
+      comparatorFunction = (value: number) =>
+        value === targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: targetValue! }
+          : false;
+      break;
+    case COMPARATOR.NOT_EQUAL:
+      comparatorFunction = (value: number, allValues: number[]) => {
+        if (value === targetValue!) {
+          return false;
+        }
+        const max = Math.max(...allValues);
+        const min = Math.min(...allValues);
+        return {
+          cutoffValue: targetValue!,
+          extremeValue:
+            Math.abs(targetValue! - min) > Math.abs(max - targetValue!)
+              ? min
+              : max,
+        };
+      };
+      break;
+    case COMPARATOR.BETWEEN:
+      comparatorFunction = (value: number) =>
+        value > targetValueLeft! && value < targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    case COMPARATOR.BETWEEN_OR_EQUAL:
+      comparatorFunction = (value: number) =>
+        value >= targetValueLeft! && value <= targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    case COMPARATOR.BETWEEN_OR_LEFT_EQUAL:
+      comparatorFunction = (value: number) =>
+        value >= targetValueLeft! && value < targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    case COMPARATOR.BETWEEN_OR_RIGHT_EQUAL:
+      comparatorFunction = (value: number) =>
+        value > targetValueLeft! && value <= targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    default:
+      comparatorFunction = () => false;
+      break;
+  }
+  return (value: number) => {
+    const compareResult = comparatorFunction(value, columnValues);
+    if (compareResult === false) return undefined;
+    const { cutoffValue, extremeValue } = compareResult;
+    // eslint-disable-next-line no-param-reassign
+    return getStyle(
+      styleScheme,
+      getOpacity(value, cutoffValue, extremeValue, minOpacity, maxOpacity),
+    );
+  };
+};
+
+export const getOnStyleColorFunction = (
+  {
+    operator,
+    targetValue,
+    targetValueLeft,
+    targetValueRight,
+    colorScheme,
+    styleScheme,
+    onStyle,
+  }: ConditionalFormattingConfig,
+  columnValues: number[],
+) => {
+  let comparatorFunction: (
+    value: number,
+    allValues: number[],
+  ) => false | { cutoffValue: number; extremeValue: number };
+  if (
+    operator === undefined ||
+    colorScheme === undefined ||
+    styleScheme === undefined
+  ) {
+    return () => undefined;
+  }
+
+  if (
+    MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    (targetValueLeft === undefined || targetValueRight === undefined)
+  ) {
+    return () => undefined;
+  }
+  if (
+    operator !== COMPARATOR.NONE &&
+    !MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    targetValue === undefined
+  ) {
+    return () => undefined;
+  }
+  switch (operator) {
+    case COMPARATOR.NONE:
+      comparatorFunction = (value: number, allValues: number[]) => {
+        const cutoffValue = Math.min(...allValues);
+        const extremeValue = Math.max(...allValues);
+        return value >= cutoffValue && value <= extremeValue
+          ? { cutoffValue, extremeValue }
+          : false;
+      };
+      break;
+    case COMPARATOR.GREATER_THAN:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value > targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.max(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.LESS_THAN:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value < targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.min(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.GREATER_OR_EQUAL:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value >= targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.max(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.LESS_OR_EQUAL:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value <= targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.min(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.EQUAL:
+      comparatorFunction = (value: number) =>
+        value === targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: targetValue! }
+          : false;
+      break;
+    case COMPARATOR.NOT_EQUAL:
+      comparatorFunction = (value: number, allValues: number[]) => {
+        if (value === targetValue!) {
+          return false;
+        }
+        const max = Math.max(...allValues);
+        const min = Math.min(...allValues);
+        return {
+          cutoffValue: targetValue!,
+          extremeValue:
+            Math.abs(targetValue! - min) > Math.abs(max - targetValue!)
+              ? min
+              : max,
+        };
+      };
+      break;
+    case COMPARATOR.BETWEEN:
+      comparatorFunction = (value: number) =>
+        value > targetValueLeft! && value < targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    case COMPARATOR.BETWEEN_OR_EQUAL:
+      comparatorFunction = (value: number) =>
+        value >= targetValueLeft! && value <= targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    case COMPARATOR.BETWEEN_OR_LEFT_EQUAL:
+      comparatorFunction = (value: number) =>
+        value >= targetValueLeft! && value < targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    case COMPARATOR.BETWEEN_OR_RIGHT_EQUAL:
+      comparatorFunction = (value: number) =>
+        value > targetValueLeft! && value <= targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    default:
+      comparatorFunction = () => false;
+      break;
+  }
+  return (value: number) => {
+    const compareResult = comparatorFunction(value, columnValues);
+    if (compareResult === false) return undefined;
+
+    return onStyle;
   };
 };
 
@@ -201,12 +474,21 @@ export const getColorFormatters = memoizeOne(
         ) {
           acc.push({
             column: config?.column,
+            getStyleFromValue: getStyleFunction(
+              config,
+              data.map(row => row[config.column!] as any),
+            ),
             getColorFromValue: getColorFunction(
+              config,
+              data.map(row => row[config.column!] as number),
+            ),
+            getOnStyleFromValue: getOnStyleColorFunction(
               config,
               data.map(row => row[config.column!] as number),
             ),
           });
         }
+        console.log(config, 'acc', data);
         return acc;
       },
       [],
