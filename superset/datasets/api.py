@@ -190,6 +190,8 @@ class DatasetRestApi(BaseSupersetModelRestApi):
         "changed_on_humanized",
         "changed_by.first_name",
         "changed_by.last_name",
+        "columns.reference_table",
+        "columns.reference_column",
     ]
     show_columns = show_select_columns + [
         "columns.type_generic",

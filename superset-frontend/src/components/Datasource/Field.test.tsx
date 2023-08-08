@@ -27,6 +27,7 @@ describe('Field', () => {
   const defaultProps = {
     fieldKey: 'mock',
     value: '',
+    values: {},
     label: 'mock',
     description: 'description',
     control: <TextAreaControl />,

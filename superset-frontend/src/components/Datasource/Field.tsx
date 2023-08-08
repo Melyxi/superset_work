@@ -31,6 +31,7 @@ const formItemInlineCss = css`
 interface FieldProps<V> {
   fieldKey: string;
   value?: V;
+  values: Record<string, any>;
   label: string;
   description?: React.ReactNode;
   control: React.ReactElement;
@@ -42,6 +43,7 @@ interface FieldProps<V> {
 export default function Field<V>({
   fieldKey,
   value,
+  values,
   label,
   description = null,
   control,
@@ -58,6 +60,7 @@ export default function Field<V>({
 
   const hookedControl = React.cloneElement(control, {
     value,
+    values,
     onChange: onControlChange,
   });
   return (

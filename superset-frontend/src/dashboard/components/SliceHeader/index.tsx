@@ -129,6 +129,7 @@ const ChartHeaderStyles = styled.div`
 
 const SliceHeader: FC<SliceHeaderProps> = ({
   innerRef = null,
+  openTableEditor = () => ({}),
   forceRefresh = () => ({}),
   updateSliceName = () => ({}),
   toggleExpandSlice = () => ({}),
@@ -259,6 +260,7 @@ const SliceHeader: FC<SliceHeaderProps> = ({
                 isExpanded={isExpanded}
                 cachedDttm={cachedDttm}
                 updatedDttm={updatedDttm}
+                openTableEditor={openTableEditor}
                 toggleExpandSlice={toggleExpandSlice}
                 forceRefresh={forceRefresh}
                 logExploreChart={logExploreChart}

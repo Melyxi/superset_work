@@ -182,10 +182,15 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 # or use `SUPERSET_SECRET_KEY` environment variable.
 # Use a strong complex alphanumeric string and use a tool to help you generate
 # a sufficiently random sequence, ex: openssl rand -base64 42"
-SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY") or CHANGE_ME_SECRET_KEY
-
+# SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY") or CHANGE_ME_SECRET_KEY
+SECRET_KEY = "cx0VQD8qSCH8M4YNBBaiJVcrXWYk5sXvd2MjMcTIPFw="
 # The SQLAlchemy connection string.
-SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(DATA_DIR, "superset.db")
+SQLALCHEMY_DATABASE_URI = (
+    "postgresql://report_me_user:qqqwww12!@127.0.0.1:5432/report_me_int_4"
+)
+SQLALCHEMY_EXAMPLES_URI = (
+    "postgresql://report_me:G77ksIynw5k_6bfOpk@127.0.0.1:5432/report_me"
+)
 # SQLALCHEMY_DATABASE_URI = 'mysql://myapp@localhost/myapp'
 # SQLALCHEMY_DATABASE_URI = 'postgresql://root:password@localhost/myapp'
 
@@ -1434,7 +1439,7 @@ SEND_FILE_MAX_AGE_DEFAULT = int(timedelta(days=365).total_seconds())
 
 # URI to database storing the example data, points to
 # SQLALCHEMY_DATABASE_URI by default if set to `None`
-SQLALCHEMY_EXAMPLES_URI = None
+# SQLALCHEMY_EXAMPLES_URI = None
 
 # Optional prefix to be added to all static asset paths when rendering the UI.
 # This is useful for hosting assets in an external CDN, for example
@@ -1622,7 +1627,7 @@ elif importlib.util.find_spec("superset_config") and not is_test():
     try:
         # pylint: disable=import-error,wildcard-import,unused-wildcard-import
         import superset_config
-        from superset_config import *  # type: ignore
+        from superset_config import *
 
         print(f"Loaded your LOCAL configuration at [{superset_config.__file__}]")
     except Exception:

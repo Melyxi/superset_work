@@ -141,6 +141,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.datasets.columns.api import DatasetColumnsRestApi
         from superset.datasets.metrics.api import DatasetMetricRestApi
         from superset.datasource.api import DatasourceRestApi
+        from superset.editor_tables.views import EditorTablesView
         from superset.embedded.api import EmbeddedDashboardRestApi
         from superset.embedded.view import EmbeddedView
         from superset.explore.api import ExploreRestApi
@@ -323,7 +324,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_view_no_menu(TaggedObjectsModelView)
         appbuilder.add_view_no_menu(TagView)
         appbuilder.add_view_no_menu(ReportView)
-
+        appbuilder.add_view_no_menu(EditorTablesView)
         #
         # Add links
         #

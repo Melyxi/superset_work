@@ -191,20 +191,31 @@ class AnnotationDatasource(BaseDatasource):
 
 
 class TableColumn(Model, BaseColumn, CertificationMixin):
-
     """ORM object for table columns, each table can have multiple columns"""
 
     __tablename__ = "table_columns"
     __table_args__ = (UniqueConstraint("table_id", "column_name"),)
     table_id = Column(Integer, ForeignKey("tables.id", ondelete="CASCADE"))
     table: Mapped[SqlaTable] = relationship(
-        "SqlaTable",
-        back_populates="columns",
+        "SqlaTable", back_populates="columns", foreign_keys=[table_id]
     )
     is_dttm = Column(Boolean, default=False)
     expression = Column(MediumText())
     python_date_format = Column(String(255))
     extra = Column(Text)
+
+    reference_table = Column(
+        Integer, ForeignKey("tables.id", ondelete="CASCADE"), nullable=True
+    )
+    reference_column = Column(
+        Integer, ForeignKey("table_columns.id", ondelete="CASCADE"), nullable=True
+    )
+
+    reference_table_ref = relationship(
+        "Table",
+        foreign_keys=[reference_table],
+        primaryjoin="Table.id == TableColumn.reference_table",
+    )
 
     export_fields = [
         "table_id",
@@ -220,6 +231,8 @@ class TableColumn(Model, BaseColumn, CertificationMixin):
         "description",
         "python_date_format",
         "extra",
+        "reference_table",
+        "reference_column",
     ]
 
     update_from_object_fields = [s for s in export_fields if s not in ("table_id",)]
@@ -385,6 +398,8 @@ class TableColumn(Model, BaseColumn, CertificationMixin):
             "certified_by",
             "certification_details",
             "warning_markdown",
+            "reference_table",
+            "reference_column",
         )
 
         attr_dict = {s: getattr(self, s) for s in attrs if hasattr(self, s)}
@@ -395,7 +410,6 @@ class TableColumn(Model, BaseColumn, CertificationMixin):
 
 
 class SqlMetric(Model, BaseMetric, CertificationMixin):
-
     """ORM object for metrics, each table can have multiple metrics"""
 
     __tablename__ = "sql_metrics"
@@ -509,6 +523,7 @@ class SqlaTable(
         back_populates="table",
         cascade="all, delete-orphan",
         passive_deletes=True,
+        foreign_keys=[TableColumn.table_id],
     )
     metrics: Mapped[list[SqlMetric]] = relationship(
         SqlMetric,

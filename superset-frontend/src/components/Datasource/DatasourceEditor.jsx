@@ -17,7 +17,7 @@
  * under the License.
  */
 import rison from 'rison';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Radio } from 'src/components/Radio';
 import Card from 'src/components/Card';
@@ -41,6 +41,7 @@ import Tabs from 'src/components/Tabs';
 import CertifiedBadge from 'src/components/CertifiedBadge';
 import WarningIconWithTooltip from 'src/components/WarningIconWithTooltip';
 import DatabaseSelector from 'src/components/DatabaseSelector';
+import ControlHeader from 'src/explore/components/ControlHeader';
 import Label from 'src/components/Label';
 import Loading from 'src/components/Loading';
 import TableSelector from 'src/components/TableSelector';
@@ -179,6 +180,136 @@ CollectionTabTitle.propTypes = {
   title: PropTypes.string,
   collection: PropTypes.array,
 };
+
+function isLabeledValue(arg) {
+  return arg?.value !== undefined;
+}
+
+const ReferenceTableSelect = withToasts(
+  ({ addDangerToast, onChange, value, placeholder, ...props }) => {
+    const [options, setOptions] = useState([]);
+
+    const handleOnChange = val => {
+      onChange?.(isLabeledValue(val) ? val.value : val);
+    };
+
+    const getValue = () => {
+      if (options.length === 0) {
+        return null;
+      }
+      const currentValue =
+        value || (props.default !== undefined ? props.default : undefined);
+
+      if (currentValue === null && !options.find(o => o.value === null)) {
+        return undefined;
+      }
+      return currentValue;
+    };
+
+    useEffect(() => {
+      const onError = response =>
+        getClientErrorObject(response).then(e => {
+          const { error } = e;
+          addDangerToast(t('Error while fetching data: %s', error));
+        });
+      const loadOptions = () =>
+        SupersetClient.get({
+          endpoint: '/editortablesview/tables_table/',
+        })
+          .then(response => {
+            setOptions(
+              response.json.map(item => ({
+                value: item.id,
+                label: item.name,
+              })),
+            );
+          })
+          .catch(onError);
+      loadOptions();
+    }, []);
+
+    return (
+      <Select
+        allowClear
+        ariaLabel={t('Select table')}
+        value={getValue()}
+        header={<ControlHeader {...props} />}
+        mode="single"
+        onChange={handleOnChange}
+        options={options}
+        placeholder={placeholder}
+      />
+    );
+  },
+);
+
+const ReferenceColumnSelect = withToasts(
+  ({ addDangerToast, onChange, value, values, placeholder, ...props }) => {
+    const tableId = values.reference_table ?? 0;
+    const [options, setOptions] = useState([]);
+    const prevTableId = useRef(tableId);
+    const handleOnChange = val => {
+      onChange?.(isLabeledValue(val) ? val.value : val);
+    };
+
+    const getValue = () => {
+      if (options.length === 0) {
+        return null;
+      }
+      const currentValue =
+        value || (props.default !== undefined ? props.default : undefined);
+
+      if (currentValue === null && !options.find(o => o.value === null)) {
+        return undefined;
+      }
+      return currentValue;
+    };
+
+    useEffect(() => {
+      const onError = response =>
+        getClientErrorObject(response).then(e => {
+          const { error } = e;
+          addDangerToast(t('Error while fetching data: %s', error));
+        });
+
+      const loadOptions = () =>
+        SupersetClient.get({
+          endpoint: `/editortablesview/get_column_comment/${tableId}/`,
+        })
+          .then(response => {
+            setOptions(
+              response.json.column.map(item => ({
+                value: item.id,
+                label: item.name,
+              })),
+            );
+          })
+          .catch(onError);
+
+      if (prevTableId.current !== tableId) {
+        handleOnChange(null);
+        prevTableId.current = tableId;
+      }
+      setOptions([]);
+      if (tableId !== undefined) {
+        loadOptions();
+      }
+    }, [tableId]);
+
+    return (
+      <Select
+        allowClear
+        ariaLabel={t('Select column')}
+        value={getValue()}
+        header={<ControlHeader {...props} />}
+        mode="single"
+        onChange={handleOnChange}
+        options={options}
+        placeholder={placeholder}
+      />
+    );
+  },
+);
 
 function ColumnCollectionTable({
   columns,
@@ -356,6 +487,26 @@ function ColumnCollectionTable({
                 <TextControl
                   controlId="certificationDetails"
                   placeholder={t('Certification details')}
+                />
+              }
+            />
+            <Field
+              fieldKey="reference_table"
+              label={t('Table')}
+              control={
+                <ReferenceTableSelect
+                  controlId="referenceTable"
+                  placeholder={t('Table')}
+                />
+              }
+            />
+            <Field
+              fieldKey="reference_column"
+              label={t('Column')}
+              control={
+                <ReferenceColumnSelect
+                  controlId="referenceColumn"
+                  placeholder={t('Column')}
                 />
               }
             />
@@ -1474,9 +1625,9 @@ class DatasourceEditor extends React.PureComponent {
                 className="columns-table"
                 columns={this.state.databaseColumns}
                 datasource={datasource}
-                onColumnsChange={databaseColumns =>
-                  this.setColumns({ databaseColumns })
-                }
+                onColumnsChange={databaseColumns => {
+                  this.setColumns({ databaseColumns });
+                }}
                 onDatasourceChange={this.onDatasourceChange}
               />
               {this.state.metadataLoading && <Loading />}

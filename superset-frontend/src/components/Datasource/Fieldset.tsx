@@ -55,6 +55,7 @@ export default class Fieldset extends React.PureComponent<FieldsetProps> {
     const propExtender = (field: { props: { fieldKey: fieldKeyType } }) => ({
       onChange: this.onChange,
       value: this.props.item[field.props.fieldKey],
+      values: this.props.item,
       compact: this.props.compact,
     });
     return (
