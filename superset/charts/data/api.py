@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+from json import JSONDecodeError
 from typing import Any, TYPE_CHECKING
 
 import simplejson
@@ -25,6 +26,7 @@ from flask import current_app, g, make_response, request, Response
 from flask_appbuilder.api import expose, protect
 from flask_babel import gettext as _
 from marshmallow import ValidationError
+from sqlalchemy import text
 
 from superset import is_feature_enabled, security_manager
 from superset.charts.api import ChartRestApi
@@ -39,11 +41,17 @@ from superset.charts.data.commands.get_data_command import ChartDataCommand
 from superset.charts.data.query_context_cache_loader import QueryContextCacheLoader
 from superset.charts.post_processing import apply_post_process
 from superset.charts.schemas import ChartDataQueryContextSchema
+from superset.comments.models import Comments
+from superset.comments.utils import get_column_by
+from superset.comments.views import get_db_engine
 from superset.common.chart_data import ChartDataResultFormat, ChartDataResultType
 from superset.connectors.base.models import BaseDatasource
+from superset.connectors.sqla.models import TableColumn
 from superset.daos.exceptions import DatasourceNotFound
 from superset.exceptions import QueryObjectValidationError
 from superset.extensions import event_logger
+from superset.models.dashboard import Dashboard, dashboard_slices
+from superset.models.slice import Slice
 from superset.models.sql_lab import Query
 from superset.utils.async_query_manager import AsyncQueryTokenException
 from superset.utils.core import create_zip, get_user_id, json_int_dttm_ser
@@ -404,6 +412,198 @@ class ChartDataRestApi(ChartRestApi):
 
         return self.response_400(message=f"Unsupported result_format: {result_format}")
 
+    @staticmethod
+    def _db_intersect_sql(datasource: Any, sql_result: str) -> bool:
+        engine = get_db_engine(datasource.database_id, datasource.schema)
+
+        with engine.connect() as conn:
+            try:
+                result = conn.execute(text(sql_result))
+                rows = result.fetchall()
+            except BaseException as e:
+                print(f"Error: {str(e)}")
+                rows = []
+        if rows:
+            return True
+        return False
+
+    def _get_query_comparison(
+        self, result: Any, query_comment: str, datasource: Any
+    ) -> Any:
+        try:
+            result_intersect_sql = []
+            for query in result["queries"]:
+                res_query = query["query"]
+
+                index_select_column = len("SELECT")
+                index_from = res_query.find("FROM")
+                index_limit = res_query.find("LIMIT")
+                index_group_by = res_query.find("GROUP BY")
+
+                select_column = res_query[index_select_column:index_from].replace(
+                    ";", ""
+                )
+                group_by = ""
+                if index_group_by != -1:
+                    if index_limit != -1:
+                        group_by = res_query[index_group_by:index_limit].replace(
+                            ";", ""
+                        )
+                    else:
+                        group_by = res_query[index_group_by:].replace(";", "")
+
+                if index_limit != -1:
+                    sql_select1 = res_query.replace(";", "").rstrip("\n")
+                else:
+                    sql_select1 = res_query.replace(";", "").rstrip("\n")
+
+                index_comment_from = query_comment.find("FROM")
+
+                index_limit_comment = query_comment.find("LIMIT")
+                if index_limit_comment == -1:
+                    where_comment = (
+                        query_comment[index_comment_from:-1].rstrip(";") + "\n"
+                    )
+                    limit_sql_comment = ""
+                else:
+                    where_comment = (
+                        query_comment[index_comment_from:index_limit_comment].rstrip(
+                            ";"
+                        )
+                        + "\n"
+                    )
+                    limit_sql_comment = (
+                        query_comment[index_limit_comment:].rstrip(";") + "\n"
+                    )
+
+                sql_select2 = (
+                    query_comment[:index_select_column]
+                    + select_column
+                    + where_comment
+                    + group_by
+                    + limit_sql_comment
+                    + ";"
+                )
+
+                sql_result = (
+                    "(" + sql_select1 + ")" + "\nINTERSECT\n" + "(" + sql_select2 + ")"
+                )
+                res = sql_result.replace(";", "") + ";"
+                intersect_sql = self._db_intersect_sql(datasource, res)
+                result_intersect_sql.append(intersect_sql)
+
+            return result_intersect_sql
+        except KeyError as e:
+            return False
+
+    def _get_comments_in_slice(
+        self, result: Any, datasource: Any, form_data: Any
+    ) -> Any:
+        if datasource.__tablename__ == "tables":
+            try:
+                comments = (
+                    current_app.appbuilder.get_session.query(Comments)
+                    .join(TableColumn)
+                    .filter(Comments.table_id == datasource.id)
+                    .filter(TableColumn.is_comment == True)
+                    .all()
+                )
+
+                comments_in_column = []
+                for comment in comments:
+                    # проверка на колонку
+                    column = get_column_by(comment.column_id)
+                    queries = result.get("queries")
+                    if queries:
+                        colnames_list = []
+                        if form_data.get("metrics"):
+                            for metric in form_data.get("metrics"):
+                                if isinstance(metric, dict):
+                                    colnames_list.append(
+                                        metric["column"]["column_name"]
+                                    )
+                        for query in queries:
+                            colnames = query.get("colnames")
+                            if colnames:
+                                colnames_list.extend(colnames)
+                        if form_data.get("granularity_sqla"):
+                            colnames_list.append(form_data.get("granularity_sqla"))
+
+                        flag_include_column = False
+                        for column_chart in colnames_list:
+                            if column.column_name in column_chart:
+                                flag_include_column = True
+                                break
+
+                        if flag_include_column:
+                            comparison = self._get_query_comparison(
+                                result, comment.sql_query, datasource
+                            )
+                            if comparison:
+                                comments_in_column.append(
+                                    {
+                                        "column": column.column_name
+                                        + datasource.get_postfix_comment(),
+                                        "comment": comment.text,
+                                    }
+                                )
+
+                return comments_in_column
+            except JSONDecodeError as e:
+                print("Error: ", str(e))
+
+    @staticmethod
+    def _add_comment_dashboard(form_data: Any, comments_in_column: Any) -> None:
+        dashboard_id = form_data.get("dashboardId")
+        slice_id = form_data.get("slice_id")
+
+        if dashboard_id and slice_id:
+            slice_name = (
+                current_app.appbuilder.get_session.query(Slice).get(slice_id).slice_name
+            )
+
+            dashboard = current_app.appbuilder.get_session.query(Dashboard).get(
+                dashboard_id
+            )
+            cur_slice_id = (
+                current_app.appbuilder.get_session.query(dashboard_slices)
+                .filter_by(dashboard_id=dashboard_id)
+                .all()
+            )
+            cur_slice_id = [item[2] for item in cur_slice_id]
+            dashboard_comments = dashboard.comments
+
+            if dashboard_comments is not None:
+                dashboard_comments = json.loads(dashboard_comments)
+                for item in dashboard_comments:
+                    if item.get("slice_id") not in cur_slice_id:
+                        dashboard_comments.remove(item)
+            else:
+                dashboard_comments = []
+
+            slice_comments = {
+                "slice_id": slice_id,
+                "slice_name": slice_name,
+                "comments": comments_in_column,
+            }
+            for item in dashboard_comments:
+                if slice_comments["slice_id"] == item["slice_id"]:
+                    dashboard_comments.remove(item)
+            dashboard_comments.append(slice_comments)
+            dashboard_comments = json.dumps(dashboard_comments)
+            dashboard.comments = dashboard_comments
+            sesh = current_app.appbuilder.get_session
+            sesh.add(dashboard)
+            sesh.commit()
+
+    def _add_comment(self, result: Any, datasource: Any, form_data: Any) -> None:
+        if datasource is not None:
+            get_comments = self._get_comments_in_slice(result, datasource, form_data)
+            self._add_comment_dashboard(form_data, get_comments)
+            if get_comments:
+                if result.get("queries"):
+                    result["queries"][0].update({"extra_comments": get_comments})
+
     def _get_data_response(
         self,
         command: ChartDataCommand,
@@ -417,6 +617,8 @@ class ChartDataRestApi(ChartRestApi):
             return self.response_422(message=exc.message)
         except ChartDataQueryFailedError as exc:
             return self.response_400(message=exc.message)
+
+        self._add_comment(result, datasource, form_data)
 
         return self._send_chart_response(result, form_data, datasource)
 
