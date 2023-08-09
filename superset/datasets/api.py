@@ -114,6 +114,7 @@ class DatasetRestApi(BaseSupersetModelRestApi):
         "datasource_type",
         "explore_url",
         "extra",
+        "extra_comments",
         "kind",
         "owners.id",
         "owners.first_name",
@@ -161,6 +162,7 @@ class DatasetRestApi(BaseSupersetModelRestApi):
         "columns.id",
         "columns.is_active",
         "columns.extra",
+        "columns.is_comment",
         "columns.is_dttm",
         "columns.python_date_format",
         "columns.type",
@@ -181,6 +183,7 @@ class DatasetRestApi(BaseSupersetModelRestApi):
         "datasource_type",
         "url",
         "extra",
+        "extra_comments",
         "kind",
         "created_on",
         "created_on_humanized",
@@ -229,6 +232,7 @@ class DatasetRestApi(BaseSupersetModelRestApi):
         "columns",
         "metrics",
         "extra",
+        "extra_comments",
     ]
     openapi_spec_tag = "Datasets"
 

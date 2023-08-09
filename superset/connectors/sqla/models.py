@@ -217,6 +217,8 @@ class TableColumn(Model, BaseColumn, CertificationMixin):
         primaryjoin="Table.id == TableColumn.reference_table",
     )
 
+    is_comment = Column(Boolean, default=False, nullable=False)
+
     export_fields = [
         "table_id",
         "column_name",
@@ -233,6 +235,7 @@ class TableColumn(Model, BaseColumn, CertificationMixin):
         "extra",
         "reference_table",
         "reference_column",
+        "is_comment",
     ]
 
     update_from_object_fields = [s for s in export_fields if s not in ("table_id",)]
@@ -561,6 +564,7 @@ class SqlaTable(
     is_sqllab_view = Column(Boolean, default=False)
     template_params = Column(Text)
     extra = Column(Text)
+    extra_comments = Column(Text, nullable=True)
 
     baselink = "tablemodelview"
 
@@ -579,6 +583,7 @@ class SqlaTable(
         "filter_select_enabled",
         "fetch_values_predicate",
         "extra",
+        "extra_comments",
     ]
     update_from_object_fields = [f for f in export_fields if f != "database_id"]
     export_parent = "database"
