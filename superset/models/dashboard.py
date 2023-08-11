@@ -171,6 +171,7 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
     _filter_sets = relationship(
         "FilterSet", back_populates="dashboard", cascade="all, delete"
     )
+    comments = Column(Text)
     export_fields = [
         "dashboard_title",
         "position_json",

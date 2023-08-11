@@ -265,7 +265,7 @@ class EditorTablesView(Superset):
         qute_keys = '","'.join(keys)
         column = f'("{qute_keys}")'
         values_column = f'(:{",:".join(keys)})'
-
+        print(data)
         insert_query = (
             f'INSERT INTO "{table.table_name}" {column} VALUES {values_column};'
         )
@@ -274,5 +274,6 @@ class EditorTablesView(Superset):
             with engine_db.begin() as conn:
                 conn.execute(query, **data_query)
         except Exception as e:
+            print(e)
             return jsonify({"errors": str(e)}), 400
         return jsonify({}), 200

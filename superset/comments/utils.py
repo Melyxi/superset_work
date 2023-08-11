@@ -23,7 +23,7 @@ def get_db(pk: int) -> Any:
 
 def get_db_engine(db_pk: Any, schema: Any) -> Any:
     db = get_db(db_pk)
-    engine_db = db.get_sqla_engine(schema)
+    engine_db = db._get_sqla_engine(schema)
     return engine_db
 
 

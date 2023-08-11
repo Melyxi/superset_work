@@ -61,6 +61,8 @@ class DatasetColumnsPutSchema(Schema):
         allow_none=True, validate=[Length(1, 255), validate_python_date_format]
     )
     uuid = fields.UUID(allow_none=True)
+    reference_table = fields.Integer(allow_none=True, required=False)
+    reference_column = fields.Integer(allow_none=True, required=False)
 
 
 class DatasetMetricsPutSchema(Schema):
