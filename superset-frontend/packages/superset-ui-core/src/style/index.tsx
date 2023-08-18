@@ -19,6 +19,40 @@
 import emotionStyled from '@emotion/styled';
 import { useTheme as useThemeBasic } from '@emotion/react';
 import createCache from '@emotion/cache';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faArrowTrendUp,
+  faArrowTrendDown,
+  faCaretUp,
+  faCaretDown,
+  faChevronUp,
+  faChevronDown,
+  faAnglesUp,
+  faAnglesDown,
+  faArrowUp,
+  faArrowDown,
+  faRubleSign,
+  faShield,
+  faGear,
+  faDatabase,
+  faCircleCheck,
+  faSquareCheck,
+  faCheck,
+  faStar,
+  faUser,
+  faCoins,
+  faCreditCard,
+  faWallet,
+  faEquals,
+  faCircleExclamation,
+  faExclamation,
+  faTriangleExclamation,
+  faQuestion,
+  faCircleQuestion,
+  faThumbsUp,
+  faThumbsDown,
+  faCircle,
+} from '@fortawesome/free-solid-svg-icons';
 
 export {
   css,
@@ -52,16 +86,251 @@ export const emotionCache = createCache({
 
 export const styled = emotionStyled;
 
+// eslint-disable-next-line react/react-in-jsx-scope
+const ArrowTrendUp = <FontAwesomeIcon icon={faArrowTrendUp} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const ArrowTrendDown = <FontAwesomeIcon icon={faArrowTrendDown} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const CaretUp = <FontAwesomeIcon icon={faCaretUp} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const CaretDown = <FontAwesomeIcon icon={faCaretDown} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const ChevronUp = <FontAwesomeIcon icon={faChevronUp} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const ChevronDown = <FontAwesomeIcon icon={faChevronDown} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const AnglesUp = <FontAwesomeIcon icon={faAnglesUp} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const AnglesDown = <FontAwesomeIcon icon={faAnglesDown} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const ArrowUp = <FontAwesomeIcon icon={faArrowUp} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const ArrowDown = <FontAwesomeIcon icon={faArrowDown} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const RubleSign = <FontAwesomeIcon icon={faRubleSign} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Shield = <FontAwesomeIcon icon={faShield} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Gear = <FontAwesomeIcon icon={faGear} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Database = <FontAwesomeIcon icon={faDatabase} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const CircleCheck = <FontAwesomeIcon icon={faCircleCheck} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const SquareCheck = <FontAwesomeIcon icon={faSquareCheck} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Check = <FontAwesomeIcon icon={faCheck} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Star = <FontAwesomeIcon icon={faStar} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const User = <FontAwesomeIcon icon={faUser} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Coins = <FontAwesomeIcon icon={faCoins} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const CreditCard = <FontAwesomeIcon icon={faCreditCard} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Wallet = <FontAwesomeIcon icon={faWallet} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Equals = <FontAwesomeIcon icon={faEquals} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Exclamation = <FontAwesomeIcon icon={faExclamation} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const CircleExclamation = <FontAwesomeIcon icon={faCircleExclamation} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const TriangleExclamation = <FontAwesomeIcon icon={faTriangleExclamation} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Question = <FontAwesomeIcon icon={faQuestion} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const CircleQuestion = <FontAwesomeIcon icon={faCircleQuestion} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const ThumbsUp = <FontAwesomeIcon icon={faThumbsUp} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const ThumbsDown = <FontAwesomeIcon icon={faThumbsDown} />;
+// eslint-disable-next-line react/react-in-jsx-scope
+const Circle = <FontAwesomeIcon icon={faCircle} />;
+
 const defaultTheme = {
   borderRadius: 4,
+  icons: {
+    arrowTrendUp: {
+      name: 'arrowTrendUp',
+      element: ArrowTrendUp,
+    },
+    arrowTrendDown: {
+      name: 'arrowTrendDown',
+      element: ArrowTrendDown,
+    },
+    caretUp: {
+      name: 'caretUp',
+      element: CaretUp,
+    },
+    caretDown: {
+      name: 'caretDown',
+      element: CaretDown,
+    },
+    chevronUp: {
+      name: 'chevronUp',
+      element: ChevronUp,
+    },
+    chevronDown: {
+      name: 'chevronDown',
+      element: ChevronDown,
+    },
+    anglesUp: {
+      name: 'anglesUp',
+      element: AnglesUp,
+    },
+    anglesDown: {
+      name: 'anglesDown',
+      element: AnglesDown,
+    },
+    arrowUp: {
+      name: 'arrowUp',
+      element: ArrowUp,
+    },
+    arrowDown: {
+      name: 'arrowDown',
+      element: ArrowDown,
+    },
+    rubleSign: {
+      name: 'rubleSign',
+      element: RubleSign,
+    },
+    shield: {
+      name: 'shield',
+      element: Shield,
+    },
+    gear: {
+      name: 'gear',
+      element: Gear,
+    },
+    database: {
+      name: 'database',
+      element: Database,
+    },
+    circleCheck: {
+      name: 'circleCheck',
+      element: CircleCheck,
+    },
+    squareCheck: {
+      name: 'squareCheck',
+      element: SquareCheck,
+    },
+    check: {
+      name: 'check',
+      element: Check,
+    },
+    star: {
+      name: 'star',
+      element: Star,
+    },
+    user: {
+      name: 'user',
+      element: User,
+    },
+    coins: {
+      name: 'coins',
+      element: Coins,
+    },
+    creditCard: {
+      name: 'creditCard',
+      element: CreditCard,
+    },
+    wallet: {
+      name: 'wallet',
+      element: Wallet,
+    },
+    equals: {
+      name: 'equals',
+      element: Equals,
+    },
+    exclamation: {
+      name: 'exclamation',
+      element: Exclamation,
+    },
+    circleExclamation: {
+      name: 'circleExclamation',
+      element: CircleExclamation,
+    },
+    triangleExclamation: {
+      name: 'triangleExclamation',
+      element: TriangleExclamation,
+    },
+    question: {
+      name: 'question',
+      element: Question,
+    },
+    circleQuestion: {
+      name: 'circleQuestion',
+      element: CircleQuestion,
+    },
+    thumbsUp: {
+      name: 'thumbsUp',
+      element: ThumbsUp,
+    },
+    thumbsDown: {
+      name: 'thumbsDown',
+      element: ThumbsDown,
+    },
+    circle: {
+      name: 'circle',
+      element: Circle,
+    },
+  },
+  styles: {
+    text: {
+      label: '#879399',
+      help: '#737373',
+    },
+    style1: {
+      name: 'style1',
+      className: 'rm-st-1',
+    },
+    style2: {
+      name: 'style2',
+      className: 'rm-st-2',
+    },
+    style3: {
+      name: 'style3',
+      className: 'rm-st-3',
+    },
+    style4: {
+      name: 'style4',
+      className: 'rm-st-4',
+    },
+    style5: {
+      name: 'style5',
+      className: 'rm-st-5',
+    },
+    style6: {
+      name: 'style6',
+      className: 'rm-st-6',
+    },
+    style7: {
+      name: 'style7',
+      className: 'rm-st-7',
+    },
+    style8: {
+      name: 'style8',
+      className: 'rm-st-8',
+    },
+    style9: {
+      name: 'style9',
+      className: 'rm-st-9',
+    },
+    style10: {
+      name: 'style10',
+      className: 'rm-st-10',
+    },
+  },
   colors: {
     text: {
       label: '#879399',
       help: '#737373',
     },
     primary: {
-      base: '#20A7C9',
-      dark1: '#1A85A0',
+      base: '#4099ff',
+      dark1: '#4099ff',
       dark2: '#156378',
       light1: '#79CADE',
       light2: '#A5DAE9',
@@ -161,7 +430,6 @@ const defaultTheme = {
   },
   transitionTiming: 0.3,
   gridUnit: 4,
-  brandIconMaxWidth: 37,
 };
 
 export type SupersetTheme = typeof defaultTheme;

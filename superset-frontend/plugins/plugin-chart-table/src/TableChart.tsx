@@ -414,6 +414,10 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         ? config.columnWidth
         : Number(config.columnWidth);
 
+      const columnFont = !Number.isNaN(Number(config.columnFontSize))
+        ? `${config.columnFontSize}%`
+        : '100%';
+      console.log(columnFont);
       // inline style for both th and td cell
       const sharedStyle: CSSProperties = getSharedStyle(column);
 
@@ -429,7 +433,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
       const { truncateLongCells } = config;
 
       const hasColumnColorFormatters =
-        isNumeric &&
+        // isNumeric &&
         Array.isArray(columnColorFormatters) &&
         columnColorFormatters.length > 0;
 
@@ -457,19 +461,142 @@ export default function TableChart<D extends DataRecord = DataRecord>(
           const html = isHtml ? { __html: text } : undefined;
 
           let backgroundColor;
+          let iconAdd;
+          let sideIcon;
+          let classStyle;
+          const tableTransparent = false;
+          let showValue;
+          const showList: boolean[] = [];
           if (hasColumnColorFormatters) {
             columnColorFormatters!
               .filter(formatter => formatter.column === column.key)
               .forEach(formatter => {
-                const formatterResult = value
-                  ? formatter.getColorFromValue(value as number)
-                  : false;
-                if (formatterResult) {
-                  backgroundColor = formatterResult;
+                const formatterResult = formatter.getColorFromValue(
+                  value as number,
+                );
+                const styleFormatterResult = formatter.getStyleFromValue(
+                  value as number,
+                );
+                const onIconFormatterResult = formatter.getOnIconFromValue(
+                  value as number,
+                );
+
+                const radioFormatResult = formatter.getRadioFormatFromValue(
+                  value as number,
+                );
+                const radioSideResult = formatter.getRadioSideFromValue(
+                  value as number,
+                );
+                showValue = formatter.getShowValue(value as number);
+                if (showValue === undefined) {
+                  showValue = true;
+                }
+                showList.push(showValue);
+
+                if (radioFormatResult === 'color') {
+                  if (formatterResult) {
+                    backgroundColor = formatterResult;
+                    if (tableTransparent) {
+                      backgroundColor = backgroundColor.replace(
+                        /0\.[0-9]+/,
+                        '1.0',
+                      );
+                    }
+                  }
+                }
+                if (radioFormatResult === 'style') {
+                  if (styleFormatterResult) {
+                    classStyle = `${styleFormatterResult.className}`;
+                  }
+                }
+                if (onIconFormatterResult) {
+                  const icon = formatter.getOnIconSchemeFromValue(
+                    value as number,
+                  );
+                  sideIcon = radioSideResult;
+                  iconAdd = icon.element;
                 }
               });
+
+            columnsMeta.forEach(function callback(currentValue, index) {
+              const NanFormat =
+                currentValue.isNumeric &&
+                Array.isArray(columnColorFormatters) &&
+                columnColorFormatters.length > 0;
+              let valueNan: number;
+              // console.log(NanFormat);
+              if (NanFormat) {
+                valueNan = row.allCells[index].value;
+                console.log(valueNan);
+                columnColorFormatters!
+                  .filter(formatter => formatter.column === currentValue.key)
+                  .forEach(formatter => {
+                    const formatterNan = formatter.getNanFieldValue(
+                      valueNan as number,
+                    );
+                    // console.log(formatterNan);
+                    console.log('column', column);
+                    console.log('column.key', column.key);
+                    console.log('formatterNan', formatterNan);
+                    if (formatterNan) {
+                      const isInclude = formatterNan.includes(column.key);
+                      console.log(isInclude);
+                      if (isInclude) {
+                        const formatterResult = formatter.getColorFromValue(
+                          valueNan as number,
+                        );
+                        const styleFormatterResult =
+                          formatter.getStyleFromValue(valueNan as number);
+                        const onIconFormatterResult =
+                          formatter.getOnIconFromValue(valueNan as number);
+
+                        const radioFormatResult =
+                          formatter.getRadioFormatFromValue(valueNan as number);
+                        const radioSideResult = formatter.getRadioSideFromValue(
+                          valueNan as number,
+                        );
+
+                        if (radioFormatResult === 'color') {
+                          if (formatterResult) {
+                            backgroundColor = formatterResult;
+                            if (tableTransparent) {
+                              backgroundColor = backgroundColor.replace(
+                                /0\.[0-9]+/,
+                                '1.0',
+                              );
+                            }
+                          }
+                        }
+                        if (radioFormatResult === 'style') {
+                          if (styleFormatterResult) {
+                            classStyle = `${styleFormatterResult.className}`;
+                          }
+                        }
+                        showValue = formatter.getShowValue(valueNan as number);
+                        if (showValue === undefined) {
+                          showValue = true;
+                        }
+                        showList.push(showValue);
+                        if (onIconFormatterResult) {
+                          const icon = formatter.getOnIconSchemeFromValue(
+                            valueNan as number,
+                          );
+                          sideIcon = radioSideResult;
+                          iconAdd = icon.element;
+                        }
+                      }
+                    }
+                  });
+              }
+            });
+          }
+          if (showValue === undefined) {
+            showValue = true;
           }
 
+          if (showList) {
+            showValue = !showList.includes(false);
+          }
           const StyledCell = styled.td`
             text-align: ${sharedStyle.textAlign};
             white-space: ${value instanceof Date ? 'nowrap' : undefined};
@@ -513,6 +640,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                     }
                   }
                 : undefined,
+            id: String(i),
             onContextMenu: (e: MouseEvent) => {
               if (handleContextMenu) {
                 e.preventDefault();
@@ -527,6 +655,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
             },
             className: [
               className,
+              classStyle,
               value == null ? 'dt-is-null' : '',
               isActiveFilterValue(key, value) ? ' dt-is-active-filter' : '',
             ].join(' '),
@@ -549,6 +678,22 @@ export default function TableChart<D extends DataRecord = DataRecord>(
           }
           // If cellProps renders textContent already, then we don't have to
           // render `Cell`. This saves some time for large tables.
+          if (sideIcon === 'right') {
+            return (
+              <StyledCell {...cellProps}>
+                {showValue ? text : ''}
+                {iconAdd}
+              </StyledCell>
+            );
+          }
+          if (sideIcon === 'left') {
+            return (
+              <StyledCell {...cellProps}>
+                {iconAdd} {showValue ? text : ''}
+              </StyledCell>
+            );
+          }
+
           return (
             <StyledCell {...cellProps}>
               {valueRange && (
@@ -566,7 +711,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                   className="dt-truncate-cell"
                   style={columnWidth ? { width: columnWidth } : undefined}
                 >
-                  {text}
+                  {showValue ? text : ''}
                 </div>
               ) : (
                 text

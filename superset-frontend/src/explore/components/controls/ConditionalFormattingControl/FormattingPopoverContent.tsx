@@ -16,18 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React from 'react';
-import { styled, SupersetTheme, t, useTheme } from '@superset-ui/core';
+import React, { ReactNode } from 'react';
+import {
+  JsonValue,
+  styled,
+  SupersetTheme,
+  t,
+  useTheme,
+} from '@superset-ui/core';
 import { Form, FormItem, FormProps } from 'src/components/Form';
 import Select from 'src/components/Select/Select';
 import { Col, Row } from 'src/components';
 import { InputNumber } from 'src/components/Input';
 import Button from 'src/components/Button';
+import CheckboxControl from '../CheckboxControl';
 import {
   COMPARATOR,
   ConditionalFormattingConfig,
   MULTIPLE_VALUE_COMPARATORS,
 } from './types';
+import RadioButtonControl from '../../../../../packages/superset-ui-chart-controls/src/shared-controls/components/RadioButtonControl';
 
 const FullWidthInputNumber = styled(InputNumber)`
   width: 100%;
@@ -181,18 +189,225 @@ const renderOperatorFields = ({ getFieldValue }: GetFieldValue) =>
       </Col>
     </Row>
   );
+export enum RadioValueSideIcon {
+  right = 'right',
+  left = 'left',
+}
+export const RadioValueSideIconOptions: [
+  JsonValue,
+  Exclude<ReactNode, null | undefined | boolean>,
+][] = [
+  [RadioValueSideIcon.left, t('left')],
+  [RadioValueSideIcon.right, t('right')],
+];
+
+export enum RadioValueFormat {
+  Color = 'color',
+  Style = 'style',
+}
+export const RadioValueFormatOptions: [
+  JsonValue,
+  Exclude<ReactNode, null | undefined | boolean>,
+][] = [
+  [null, t('None')],
+  [RadioValueFormat.Color, t('Color')],
+  [RadioValueFormat.Style, t('Style')],
+];
+const styleSchemeOptions = (theme: SupersetTheme) => [
+  {
+    value: theme.styles.style1.name,
+    label: t('rm-st-1'),
+  },
+  {
+    value: theme.styles.style2.name,
+    label: t('rm-st-2'),
+  },
+  {
+    value: theme.styles.style3.name,
+    label: t('rm-st-3'),
+  },
+  {
+    value: theme.styles.style4.name,
+    label: t('rm-st-4'),
+  },
+  {
+    value: theme.styles.style5.name,
+    label: t('rm-st-5'),
+  },
+  {
+    value: theme.styles.style6.name,
+    label: t('rm-st-6'),
+  },
+  {
+    value: theme.styles.style7.name,
+    label: t('rm-st-7'),
+  },
+  {
+    value: theme.styles.style8.name,
+    label: t('rm-st-8'),
+  },
+  {
+    value: theme.styles.style9.name,
+    label: t('rm-st-9'),
+  },
+  {
+    value: theme.styles.style10.name,
+    label: t('rm-st-10'),
+  },
+];
+
+const styleIconOptions = (theme: SupersetTheme) => [
+  {
+    value: theme.icons.arrowTrendUp.name,
+    label: theme.icons.arrowTrendUp.element,
+  },
+  {
+    value: theme.icons.arrowTrendDown.name,
+    label: theme.icons.arrowTrendDown.element,
+  },
+  {
+    value: theme.icons.caretUp.name,
+    label: theme.icons.caretUp.element,
+  },
+  {
+    value: theme.icons.caretDown.name,
+    label: theme.icons.caretDown.element,
+  },
+  {
+    value: theme.icons.chevronUp.name,
+    label: theme.icons.chevronUp.element,
+  },
+  {
+    value: theme.icons.chevronDown.name,
+    label: theme.icons.chevronDown.element,
+  },
+  {
+    value: theme.icons.anglesUp.name,
+    label: theme.icons.anglesUp.element,
+  },
+  {
+    value: theme.icons.anglesDown.name,
+    label: theme.icons.anglesDown.element,
+  },
+  {
+    value: theme.icons.arrowUp.name,
+    label: theme.icons.arrowUp.element,
+  },
+  {
+    value: theme.icons.arrowDown.name,
+    label: theme.icons.arrowDown.element,
+  },
+  {
+    value: theme.icons.rubleSign.name,
+    label: theme.icons.rubleSign.element,
+  },
+  {
+    value: theme.icons.shield.name,
+    label: theme.icons.shield.element,
+  },
+  {
+    value: theme.icons.gear.name,
+    label: theme.icons.gear.element,
+  },
+  {
+    value: theme.icons.database.name,
+    label: theme.icons.database.element,
+  },
+  {
+    value: theme.icons.circleCheck.name,
+    label: theme.icons.circleCheck.element,
+  },
+  {
+    value: theme.icons.squareCheck.name,
+    label: theme.icons.squareCheck.element,
+  },
+  {
+    value: theme.icons.check.name,
+    label: theme.icons.check.element,
+  },
+  {
+    value: theme.icons.star.name,
+    label: theme.icons.star.element,
+  },
+  {
+    value: theme.icons.user.name,
+    label: theme.icons.user.element,
+  },
+  {
+    value: theme.icons.coins.name,
+    label: theme.icons.coins.element,
+  },
+  {
+    value: theme.icons.creditCard.name,
+    label: theme.icons.creditCard.element,
+  },
+  {
+    value: theme.icons.wallet.name,
+    label: theme.icons.wallet.element,
+  },
+  {
+    value: theme.icons.equals.name,
+    label: theme.icons.equals.element,
+  },
+  {
+    value: theme.icons.exclamation.name,
+    label: theme.icons.exclamation.element,
+  },
+  {
+    value: theme.icons.circleExclamation.name,
+    label: theme.icons.circleExclamation.element,
+  },
+  {
+    value: theme.icons.triangleExclamation.name,
+    label: theme.icons.triangleExclamation.element,
+  },
+  {
+    value: theme.icons.question.name,
+    label: theme.icons.question.element,
+  },
+  {
+    value: theme.icons.circleQuestion.name,
+    label: theme.icons.circleQuestion.element,
+  },
+  {
+    value: theme.icons.thumbsUp.name,
+    label: theme.icons.thumbsUp.element,
+  },
+  {
+    value: theme.icons.thumbsDown.name,
+    label: theme.icons.thumbsDown.element,
+  },
+  {
+    value: theme.icons.circle.name,
+    label: theme.icons.circle.element,
+  },
+];
 
 export const FormattingPopoverContent = ({
   config,
   onChange,
   columns = [],
+  columnNan = [],
 }: {
   config?: ConditionalFormattingConfig;
   onChange: (config: ConditionalFormattingConfig) => void;
   columns: { label: string; value: string }[];
+  columnNan: { label: string; value: string }[];
 }) => {
   const theme = useTheme();
   const colorScheme = colorSchemeOptions(theme);
+  const styleScheme = styleSchemeOptions(theme);
+  const iconSchema = styleIconOptions(theme);
+  const onIcon = false;
+  const radioFormat = RadioValueFormatOptions[1][0];
+  const radioSide = RadioValueSideIconOptions[0][0];
+  const [onStyle, setChecked] = React.useState(false);
+  const [onColor, setCheckedColor] = React.useState(true);
+  const handleChange = () => {
+    setChecked(!onStyle);
+    setCheckedColor(!onColor);
+    return !onColor;
+  };
   return (
     <Form
       onFinish={onChange}
@@ -210,8 +425,46 @@ export const FormattingPopoverContent = ({
           >
             <Select ariaLabel={t('Select column')} options={columns} />
           </FormItem>
+          <FormItem
+            name="onIcon"
+            id="onIcon"
+            label={t('ON ICON')}
+            initialValue={onIcon}
+          >
+            <CheckboxControl checked={onIcon} />
+          </FormItem>
+          <FormItem
+            name="radioSide"
+            id="radioSide"
+            label={t('SIDE ICON')}
+            initialValue={radioSide}
+          >
+            <RadioButtonControl
+              options={RadioValueSideIconOptions}
+              onChange={handleChange}
+            />
+          </FormItem>
+          <FormItem
+            name="iconScheme"
+            label={t('icon scheme')}
+            rules={rulesRequired}
+            initialValue={iconSchema[0].value}
+          >
+            <Select ariaLabel={t('icon scheme')} options={iconSchema} />
+          </FormItem>
         </Col>
         <Col span={12}>
+          <FormItem
+            name="radioFormat"
+            id="radioFormat"
+            label={t('FORMAT')}
+            initialValue={radioFormat}
+          >
+            <RadioButtonControl
+              options={RadioValueFormatOptions}
+              onChange={handleChange}
+            />
+          </FormItem>
           <FormItem
             name="colorScheme"
             label={t('Color scheme')}
@@ -219,6 +472,21 @@ export const FormattingPopoverContent = ({
             initialValue={colorScheme[0].value}
           >
             <Select ariaLabel={t('Color scheme')} options={colorScheme} />
+          </FormItem>
+          <FormItem
+            name="styleScheme"
+            label={t('style scheme')}
+            rules={rulesRequired}
+            initialValue={styleScheme[0].value}
+          >
+            <Select ariaLabel={t('Color scheme')} options={styleScheme} />
+          </FormItem>
+          <FormItem name="columnNan" label={t('Column')}>
+            <Select
+              mode="multiple"
+              ariaLabel={t('Select column')}
+              options={columnNan}
+            />
           </FormItem>
         </Col>
       </Row>

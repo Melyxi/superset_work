@@ -444,11 +444,27 @@ export type ConditionalFormattingConfig = {
   targetValueRight?: number;
   column?: string;
   colorScheme?: string;
+  styleScheme?: string | number;
+  radioFormat?: string | undefined;
+  iconScheme?: string;
+  onStyle?: boolean | undefined;
+  onIcon?: boolean | undefined;
+  radioSide?: string;
+  columnNan?: [];
+  showValue?: boolean | undefined;
 };
 
 export type ColorFormatters = {
   column: string;
   getColorFromValue: (value: number) => string | undefined;
+  getStyleFromValue: (value: number) => any | undefined;
+  getOnStyleFromValue: (value: number) => any | undefined;
+  getOnIconFromValue: (value: number) => any | undefined;
+  getOnIconSchemeFromValue: (value: number) => any;
+  getRadioFormatFromValue: (value: number) => any;
+  getRadioSideFromValue: (value: number) => any;
+  getNanFieldValue: (value: number) => any;
+  getShowValue: (value: number) => any;
 }[];
 
 export default {};

@@ -529,9 +529,22 @@ const config: ControlPanelConfig = {
                           label: verboseMap[colname] ?? colname,
                         }))
                     : [];
+                const noNumericColumns =
+                  Array.isArray(colnames) && Array.isArray(coltypes)
+                    ? colnames
+                        .filter(
+                          (colname: string, index: number) =>
+                            coltypes[index] !== GenericDataType.NUMERIC,
+                        )
+                        .map(colname => ({
+                          value: colname,
+                          label: verboseMap[colname] ?? colname,
+                        }))
+                    : [];
                 return {
                   removeIrrelevantConditions: chartStatus === 'success',
                   columnOptions: numericColumns,
+                  columnNan: noNumericColumns,
                   verboseMap,
                 };
               },

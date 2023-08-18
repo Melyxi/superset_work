@@ -59,13 +59,27 @@ export default function downloadAsImage(
     // Mapbox controls are loaded from different origin, causing CORS error
     // See https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toDataURL#exceptions
     const filter = (node: Element) => {
-      if (typeof node.className === 'string') {
-        return (
-          node.className !== 'mapboxgl-control-container' &&
-          !node.className.includes('ant-dropdown')
-        );
+      try {
+        if (typeof node.className === 'string') {
+          return (
+            node.className !== 'mapboxgl-control-container' &&
+            node.className !== 'ant-tag' &&
+            node.className !== 'button-container' &&
+            node.className !== 'action-button' &&
+            !node.className.includes('ant-dropdown') &&
+            !node.className.includes('ant-tag') &&
+            !node.className.includes('fave-unfave-icon') &&
+            !node.className.includes('anticon-ellipsis')
+          );
+        }
+        if (node.tagName === 'svg') {
+          node.removeAttribute('class');
+          node.setAttribute('style', 'vertical-align: -0.125em; height: 1em;');
+        }
+        return true;
+      } catch (err) {
+        return false;
       }
-      return true;
     };
 
     return domToImage

@@ -17,7 +17,7 @@
  * under the License.
  */
 import React, { useEffect, useState } from 'react';
-import { styled, css, t, useTheme } from '@superset-ui/core';
+import { styled, css, t, useTheme, supersetTheme } from '@superset-ui/core';
 import Icons from 'src/components/Icons';
 import ControlHeader from 'src/explore/components/ControlHeader';
 import { FormattingPopover } from './FormattingPopover';
@@ -68,6 +68,7 @@ export const CloseButton = styled.button`
 const ConditionalFormattingControl = ({
   value,
   onChange,
+  columnNan,
   columnOptions,
   verboseMap,
   removeIrrelevantConditions,
@@ -120,24 +121,64 @@ const ConditionalFormattingControl = ({
     targetValue,
     targetValueLeft,
     targetValueRight,
+    styleScheme,
+    radioFormat,
+    columnNan,
   }: ConditionalFormattingConfig) => {
     const columnName = (column && verboseMap?.[column]) ?? column;
+    let style;
+    let nanColumn;
+    if (columnNan) {
+      if (columnNan.length > 0) {
+        nanColumn = `${t('column')}: ${columnNan.join(', ')}`;
+      } else {
+        nanColumn = '';
+      }
+    } else {
+      nanColumn = '';
+    }
+
+    if (radioFormat === 'style') {
+      style = `${t('style')}: ${styleScheme}`;
+      if (styleScheme) {
+        style = `${t('style')}: ${supersetTheme.styles[styleScheme].className}`;
+      } else {
+        style = '';
+      }
+    } else {
+      style = '';
+    }
+    // eslint-disable-next-line prefer-const
+    const resString = `${style} ${nanColumn}`;
     switch (operator) {
       case COMPARATOR.NONE:
-        return `${columnName}`;
+        return `${columnName} ${resString}`;
       case COMPARATOR.BETWEEN:
-        return `${targetValueLeft} ${COMPARATOR.LESS_THAN} ${columnName} ${COMPARATOR.LESS_THAN} ${targetValueRight}`;
+        return `${targetValueLeft} ${COMPARATOR.LESS_THAN} ${columnName} ${COMPARATOR.LESS_THAN} ${targetValueRight} ${resString}`;
       case COMPARATOR.BETWEEN_OR_EQUAL:
-        return `${targetValueLeft} ${COMPARATOR.LESS_OR_EQUAL} ${columnName} ${COMPARATOR.LESS_OR_EQUAL} ${targetValueRight}`;
+        return `${targetValueLeft} ${COMPARATOR.LESS_OR_EQUAL} ${columnName} ${COMPARATOR.LESS_OR_EQUAL} ${targetValueRight} ${resString}`;
       case COMPARATOR.BETWEEN_OR_LEFT_EQUAL:
-        return `${targetValueLeft} ${COMPARATOR.LESS_OR_EQUAL} ${columnName} ${COMPARATOR.LESS_THAN} ${targetValueRight}`;
+        return `${targetValueLeft} ${COMPARATOR.LESS_OR_EQUAL} ${columnName} ${COMPARATOR.LESS_THAN} ${targetValueRight} ${resString}`;
       case COMPARATOR.BETWEEN_OR_RIGHT_EQUAL:
-        return `${targetValueLeft} ${COMPARATOR.LESS_THAN} ${columnName} ${COMPARATOR.LESS_OR_EQUAL} ${targetValueRight}`;
+        return `${targetValueLeft} ${COMPARATOR.LESS_THAN} ${columnName} ${COMPARATOR.LESS_OR_EQUAL} ${targetValueRight} ${resString}`;
       default:
-        return `${columnName} ${operator} ${targetValue}`;
+        return `${columnName} ${operator} ${targetValue} ${resString}`;
     }
   };
-
+  const getColor = ({
+    radioFormat,
+    colorScheme,
+  }: ConditionalFormattingConfig) => {
+    if (radioFormat === 'color') {
+      return colorScheme;
+    }
+    return theme.colors.grayscale.light3;
+  };
+  const OptionColor = styled.div<{
+    color?: string;
+  }>`
+    background-color: ${({ color }) => color};
+  `;
   return (
     <div>
       <ControlHeader {...props} />
@@ -151,6 +192,7 @@ const ConditionalFormattingControl = ({
               title={t('Edit formatter')}
               config={config}
               columns={columnOptions}
+              columnNan={columnNan}
               onChange={(newConfig: ConditionalFormattingConfig) =>
                 onEdit(newConfig, index)
               }
@@ -159,7 +201,11 @@ const ConditionalFormattingControl = ({
               <OptionControlContainer withCaret>
                 <Label>{createLabel(config)}</Label>
                 <CaretContainer>
-                  <Icons.CaretRight iconColor={theme.colors.grayscale.light1} />
+                  <OptionColor color={getColor(config)}>
+                    <Icons.CaretRight
+                      iconColor={theme.colors.grayscale.light1}
+                    />
+                  </OptionColor>
                 </CaretContainer>
               </OptionControlContainer>
             </FormattingPopover>
@@ -170,6 +216,7 @@ const ConditionalFormattingControl = ({
           columns={columnOptions}
           onChange={onSave}
           destroyTooltipOnHide
+          columnNan={columnNan}
         >
           <AddControlLabel>
             <Icons.PlusSmall iconColor={theme.colors.grayscale.light1} />

@@ -49,12 +49,21 @@ export type ConditionalFormattingConfig = {
   targetValueRight?: number;
   column?: string;
   colorScheme?: string;
+  styleScheme?: string | number;
+  iconScheme?: string;
+  radioFormat?: string | undefined;
+  onStyle?: boolean | undefined;
+  onIcon?: boolean | undefined;
+  showValue?: boolean | undefined;
+  radioSide?: string;
+  columnNan?: [];
 };
 
 export type ConditionalFormattingControlProps = ControlComponentProps<
   ConditionalFormattingConfig[]
 > & {
   columnOptions: { label: string; value: string }[];
+  columnNan: { label: string; value: string }[];
   removeIrrelevantConditions: boolean;
   verboseMap: Record<string, string>;
   label: string;
@@ -63,6 +72,7 @@ export type ConditionalFormattingControlProps = ControlComponentProps<
 
 export type FormattingPopoverProps = PopoverProps & {
   columns: { label: string; value: string }[];
+  columnNan: { label: string; value: string }[];
   onChange: (value: ConditionalFormattingConfig) => void;
   config?: ConditionalFormattingConfig;
   title: string;
