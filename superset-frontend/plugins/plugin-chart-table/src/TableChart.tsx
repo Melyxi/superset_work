@@ -534,10 +534,6 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                     const formatterNan = formatter.getNanFieldValue(
                       valueNan as number,
                     );
-                    // console.log(formatterNan);
-                    console.log('column', column);
-                    console.log('column.key', column.key);
-                    console.log('formatterNan', formatterNan);
                     if (formatterNan) {
                       const isInclude = formatterNan.includes(column.key);
                       console.log(isInclude);
