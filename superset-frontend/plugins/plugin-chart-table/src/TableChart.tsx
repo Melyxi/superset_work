@@ -18,16 +18,17 @@
  */
 import React, {
   CSSProperties,
+  MouseEvent,
   useCallback,
   useLayoutEffect,
   useMemo,
   useState,
-  MouseEvent,
 } from 'react';
 import {
   ColumnInstance,
   ColumnWithLooseAccessor,
   DefaultSortTypes,
+  IdType,
   Row,
 } from 'react-table';
 import { extent as d3Extent, max as d3Max } from 'd3-array';
@@ -36,6 +37,8 @@ import { FaSortDown as FaSortDesc } from '@react-icons/all-files/fa/FaSortDown';
 import { FaSortUp as FaSortAsc } from '@react-icons/all-files/fa/FaSortUp';
 import cx from 'classnames';
 import {
+  BinaryQueryObjectFilterClause,
+  css,
   DataRecord,
   DataRecordValue,
   DTTM_ALIAS,
@@ -43,9 +46,7 @@ import {
   GenericDataType,
   getSelectedText,
   getTimeFormatterForGranularity,
-  BinaryQueryObjectFilterClause,
   styled,
-  css,
   t,
   tn,
 } from '@superset-ui/core';
@@ -91,21 +92,21 @@ function cellWidth({
   value,
   valueRange,
   alignPositiveNegative,
+  isFormatter = false,
 }: {
   value: number;
   valueRange: ValueRange;
   alignPositiveNegative: boolean;
+  isFormatter: boolean;
 }) {
   const [minValue, maxValue] = valueRange;
   if (alignPositiveNegative) {
-    const perc = Math.abs(Math.round((value / maxValue) * 100));
-    return perc;
+    return Math.abs(Math.round((value / maxValue) * (isFormatter ? 80 : 100)));
   }
   const posExtent = Math.abs(Math.max(maxValue, 0));
   const negExtent = Math.abs(Math.min(minValue, 0));
   const tot = posExtent + negExtent;
-  const perc2 = Math.round((Math.abs(value) / tot) * 100);
-  return perc2;
+  return Math.round((Math.abs(value) / tot) * (isFormatter ? 80 : 100));
 }
 
 /**
@@ -131,18 +132,53 @@ function cellOffset({
   return Math.round((Math.min(negExtent + value, negExtent) / tot) * 100);
 }
 
+function hexToRgb(inputHex: string | undefined): {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+} {
+  if (inputHex === undefined) {
+    return { r: 0, g: 0, b: 0, a: 0 };
+  }
+
+  const hex = inputHex.replace(/^#/, '');
+
+  if (hex.length !== 8) {
+    return { r: 0, g: 0, b: 0, a: 0 };
+  }
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const a = parseInt(hex.slice(6, 8), 16) / 255;
+
+  return { r, g, b, a };
+}
+
 /**
  * Cell background color calculation for horizontal bar chart
  */
 function cellBackground({
   value,
   colorPositiveNegative = false,
+  colorR,
+  colorG,
+  colorB,
+  alpha,
 }: {
   value: number;
   colorPositiveNegative: boolean;
+  colorR: number;
+  colorG: number;
+  colorB: number;
+  alpha: number;
 }) {
-  const r = colorPositiveNegative && value < 0 ? 150 : 0;
-  return `rgba(${r},0,0,0.2)`;
+  if (colorR + colorB + colorG + alpha === 0) {
+    const colorR = colorPositiveNegative && value < 0 ? 150 : 0;
+    return `rgba(${colorR},0,0,0.2)`;
+  }
+
+  return `rgba(${colorR},${colorG},${colorB},${alpha})`;
 }
 
 function SortIcon<D extends object>({ column }: { column: ColumnInstance<D> }) {
@@ -232,6 +268,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     allowRearrangeColumns = false,
     onContextMenu,
     emitCrossFilters,
+    tableTransparent = true,
   } = props;
   const timestampFormatter = useCallback(
     value => getTimeFormatterForGranularity(timeGrain)(value),
@@ -414,10 +451,10 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         ? config.columnWidth
         : Number(config.columnWidth);
 
+      const columnColor = config.backgroundColor;
       const columnFont = !Number.isNaN(Number(config.columnFontSize))
         ? `${config.columnFontSize}%`
         : '100%';
-      console.log(columnFont);
       // inline style for both th and td cell
       const sharedStyle: CSSProperties = getSharedStyle(column);
 
@@ -438,12 +475,16 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         columnColorFormatters.length > 0;
 
       const valueRange =
-        !hasColumnColorFormatters &&
+        // !hasColumnColorFormatters &&
+        isNumeric &&
         (config.showCellBars === undefined
           ? showCellBars
           : config.showCellBars) &&
         (isMetric || isRawRecords) &&
         getValueRange(key, alignPositiveNegative);
+
+      const isShowBars =
+        config.showCellBars === undefined ? showCellBars : config.showCellBars;
 
       let className = '';
       if (emitCrossFilters && !isMetric) {
@@ -461,16 +502,18 @@ export default function TableChart<D extends DataRecord = DataRecord>(
           const html = isHtml ? { __html: text } : undefined;
 
           let backgroundColor;
+          let isFormatterValue;
           let iconAdd;
           let sideIcon;
           let classStyle;
-          const tableTransparent = false;
           let showValue;
+
           const showList: boolean[] = [];
           if (hasColumnColorFormatters) {
             columnColorFormatters!
               .filter(formatter => formatter.column === column.key)
               .forEach(formatter => {
+                isFormatterValue = formatter.getFormatterValue(value as number);
                 const formatterResult = formatter.getColorFromValue(
                   value as number,
                 );
@@ -524,10 +567,8 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                 Array.isArray(columnColorFormatters) &&
                 columnColorFormatters.length > 0;
               let valueNan: number;
-              // console.log(NanFormat);
               if (NanFormat) {
                 valueNan = row.allCells[index].value;
-                console.log(valueNan);
                 columnColorFormatters!
                   .filter(formatter => formatter.column === currentValue.key)
                   .forEach(formatter => {
@@ -536,7 +577,6 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                     );
                     if (formatterNan) {
                       const isInclude = formatterNan.includes(column.key);
-                      console.log(isInclude);
                       if (isInclude) {
                         const formatterResult = formatter.getColorFromValue(
                           valueNan as number,
@@ -545,7 +585,9 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                           formatter.getStyleFromValue(valueNan as number);
                         const onIconFormatterResult =
                           formatter.getOnIconFromValue(valueNan as number);
-
+                        isFormatterValue = formatter.getFormatterValue(
+                          valueNan as number,
+                        );
                         const radioFormatResult =
                           formatter.getRadioFormatFromValue(valueNan as number);
                         const radioSideResult = formatter.getRadioSideFromValue(
@@ -593,13 +635,25 @@ export default function TableChart<D extends DataRecord = DataRecord>(
           if (showList) {
             showValue = !showList.includes(false);
           }
+
           const StyledCell = styled.td`
             text-align: ${sharedStyle.textAlign};
             white-space: ${value instanceof Date ? 'nowrap' : undefined};
             position: relative;
-            background: ${backgroundColor || undefined};
+            background: ${isFormatterValue
+              ? undefined
+              : isShowBars
+              ? !isNumeric
+                ? backgroundColor || columnColor
+                : undefined
+              : backgroundColor || columnColor};
+            color: ${isFormatterValue
+              ? backgroundColor || columnColor
+              : undefined};
+            font-size: ${columnFont};
           `;
 
+          const { r, g, b, a } = hexToRgb(backgroundColor);
           const cellBarStyles = css`
             position: absolute;
             height: 100%;
@@ -611,6 +665,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                   value: value as number,
                   valueRange,
                   alignPositiveNegative,
+                  isFormatter: hasColumnColorFormatters,
                 })}%`};
                 left: ${`${cellOffset({
                   value: value as number,
@@ -620,13 +675,17 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                 background-color: ${cellBackground({
                   value: value as number,
                   colorPositiveNegative,
+                  colorR: r,
+                  colorG: g,
+                  colorB: b,
+                  alpha: a,
                 })};
               `}
           `;
-
           const cellProps = {
             // show raw number in title in case of numeric values
             title: typeof value === 'number' ? String(value) : undefined,
+            color: columnColor,
             onClick:
               emitCrossFilters && !valueRange && !isMetric
                 ? () => {
@@ -838,6 +897,15 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         data={data}
         rowCount={rowCount}
         tableClassName="table table-striped table-condensed"
+        initialState={{
+          hiddenColumns: columnsMeta.reduce<IdType<D>[]>((acc, column, i) => {
+            if (column.config?.HiddenColumn) {
+              acc.push(String(i));
+            }
+
+            return acc;
+          }, []),
+        }}
         pageSize={pageSize}
         serverPaginationData={serverPaginationData}
         pageSizeOptions={pageSizeOptions}

@@ -254,6 +254,59 @@ export const getNanFieldValueFunction = (
     return columnNan;
   };
 };
+
+export const getFormatterValueFunction = (
+  {
+    operator,
+    targetValue,
+    targetValueLeft,
+    targetValueRight,
+    colorScheme,
+    styleScheme,
+    showValue,
+    formatterValue,
+  }: ConditionalFormattingConfig,
+  columnValues: number[],
+) => {
+  const minOpacity = MIN_OPACITY_BOUNDED;
+  if (
+    operator === undefined ||
+    colorScheme === undefined ||
+    styleScheme === undefined
+  ) {
+    return () => undefined;
+  }
+
+  if (
+    MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    (targetValueLeft === undefined || targetValueRight === undefined)
+  ) {
+    return () => undefined;
+  }
+  if (
+    operator !== COMPARATOR.NONE &&
+    !MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    targetValue === undefined
+  ) {
+    return () => undefined;
+  }
+
+  return (value: number) => {
+    const compareResult = getComparator(
+      value,
+      columnValues,
+      operator,
+      targetValue,
+      targetValueLeft,
+      targetValueRight,
+      minOpacity,
+    );
+    if (compareResult === false) return undefined;
+
+    return formatterValue;
+  };
+};
+
 export const getShowValueFunction = (
   {
     operator,
@@ -356,6 +409,10 @@ export const getColorFormatters = memoizeOne(
               data.map(row => row[config.column!] as number),
             ),
             getShowValue: getShowValueFunction(
+              config,
+              data.map(row => row[config.column!] as number),
+            ),
+            getFormatterValue: getFormatterValueFunction(
               config,
               data.map(row => row[config.column!] as number),
             ),

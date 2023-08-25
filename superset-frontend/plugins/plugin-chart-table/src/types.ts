@@ -121,6 +121,8 @@ export interface TableChartTransformedProps<D extends DataRecord = DataRecord> {
     clientY: number,
     filters?: ContextMenuFilters,
   ) => void;
+  tableTransparent?: boolean;
+  HiddenColumn?: boolean;
 }
 
 export default {};

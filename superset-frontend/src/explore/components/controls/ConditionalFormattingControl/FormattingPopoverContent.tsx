@@ -399,6 +399,7 @@ export const FormattingPopoverContent = ({
   const styleScheme = styleSchemeOptions(theme);
   const iconSchema = styleIconOptions(theme);
   const onIcon = false;
+  const formatterValue = false;
   const radioFormat = RadioValueFormatOptions[1][0];
   const radioSide = RadioValueSideIconOptions[0][0];
   const [onStyle, setChecked] = React.useState(false);
@@ -464,6 +465,14 @@ export const FormattingPopoverContent = ({
               options={RadioValueFormatOptions}
               onChange={handleChange}
             />
+          </FormItem>
+          <FormItem
+            name="formatterValue"
+            id="formatterValue"
+            label={t('accept for value')}
+            initialValue={formatterValue}
+          >
+            <CheckboxControl checked={formatterValue} />
           </FormItem>
           <FormItem
             name="colorScheme"

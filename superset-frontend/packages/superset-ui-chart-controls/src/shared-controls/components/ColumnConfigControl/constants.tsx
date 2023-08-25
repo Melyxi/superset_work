@@ -40,7 +40,37 @@ export type SharedColumnConfigProp =
   | 'd3TimeFormat'
   | 'horizontalAlign'
   | 'truncateLongCells'
-  | 'showCellBars';
+  | 'showCellBars'
+  | 'backgroundColor'
+  | 'columnFontSize'
+  | 'HiddenColumn';
+
+const backgroundColor: ControlFormItemSpec<'Input'> = {
+  controlType: 'Input',
+  label: t('Background cell color'),
+  description: t('Background cell color'),
+  defaultValue: 'transparent',
+  debounceDelay: 200,
+};
+
+const HiddenColumn: ControlFormItemSpec<'Checkbox'> = {
+  controlType: 'Checkbox',
+  label: t('Hidden column'),
+  description: t('Hidden column'),
+  defaultValue: false,
+  debounceDelay: 200,
+};
+
+const columnFontSize: ControlFormItemSpec<'InputNumber'> = {
+  controlType: 'InputNumber',
+  label: t('Font Size %'),
+  description: t('Font Size %'),
+  width: 120,
+  placeholder: 'auto',
+  debounceDelay: 400,
+  defaultValue: 100,
+  validators: [validateNumber],
+};
 
 const d3NumberFormat: ControlFormItemSpec<'Select'> = {
   controlType: 'Select',
@@ -160,6 +190,9 @@ export const SHARED_COLUMN_CONFIG_PROPS = {
   showCellBars,
   alignPositiveNegative,
   colorPositiveNegative,
+  columnFontSize,
+  backgroundColor,
+  HiddenColumn,
 };
 
 export type SharedColumnConfig = {
@@ -172,7 +205,10 @@ export const DEFAULT_CONFIG_FORM_LAYOUT: ColumnConfigFormLayout = {
       'columnWidth',
       { name: 'horizontalAlign', override: { defaultValue: 'left' } },
     ],
+    ['backgroundColor'],
     ['truncateLongCells'],
+    ['columnFontSize'],
+    ['HiddenColumn'],
   ],
   [GenericDataType.NUMERIC]: [
     [
@@ -181,8 +217,11 @@ export const DEFAULT_CONFIG_FORM_LAYOUT: ColumnConfigFormLayout = {
     ],
     ['d3NumberFormat'],
     ['d3SmallNumberFormat'],
+    ['backgroundColor'],
+    ['columnFontSize'],
     ['alignPositiveNegative', 'colorPositiveNegative'],
     ['showCellBars'],
+    ['HiddenColumn'],
   ],
   [GenericDataType.TEMPORAL]: [
     [
@@ -190,11 +229,15 @@ export const DEFAULT_CONFIG_FORM_LAYOUT: ColumnConfigFormLayout = {
       { name: 'horizontalAlign', override: { defaultValue: 'left' } },
     ],
     ['d3TimeFormat'],
+    ['HiddenColumn'],
   ],
   [GenericDataType.BOOLEAN]: [
     [
       'columnWidth',
       { name: 'horizontalAlign', override: { defaultValue: 'left' } },
     ],
+    ['backgroundColor'],
+    ['columnFontSize'],
+    ['HiddenColumn'],
   ],
 };

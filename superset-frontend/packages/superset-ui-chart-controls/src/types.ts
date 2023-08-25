@@ -452,6 +452,7 @@ export type ConditionalFormattingConfig = {
   radioSide?: string;
   columnNan?: [];
   showValue?: boolean | undefined;
+  formatterValue?: boolean | undefined;
 };
 
 export type ColorFormatters = {
@@ -465,6 +466,7 @@ export type ColorFormatters = {
   getRadioSideFromValue: (value: number) => any;
   getNanFieldValue: (value: number) => any;
   getShowValue: (value: number) => any;
+  getFormatterValue: (value: number) => any;
 }[];
 
 export default {};
