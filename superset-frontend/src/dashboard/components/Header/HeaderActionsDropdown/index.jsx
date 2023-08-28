@@ -40,6 +40,7 @@ import { LOG_ACTIONS_DASHBOARD_DOWNLOAD_AS_IMAGE } from 'src/logger/LogUtils';
 import { isFeatureEnabled } from 'src/featureFlags';
 
 const propTypes = {
+  showTableEditorModal: PropTypes.func.isRequired,
   addSuccessToast: PropTypes.func.isRequired,
   addDangerToast: PropTypes.func.isRequired,
   dashboardInfo: PropTypes.object.isRequired,
@@ -81,6 +82,7 @@ const defaultProps = {
 };
 
 const MENU_KEYS = {
+  OPEN_TABLE_EDITOR: 'open-table-editor',
   SAVE_MODAL: 'save-modal',
   SHARE_DASHBOARD: 'share-dashboard',
   REFRESH_DASHBOARD: 'refresh-dashboard',
@@ -158,6 +160,9 @@ class HeaderActionsDropdown extends React.PureComponent {
 
   handleMenuClick({ key, domEvent }) {
     switch (key) {
+      case MENU_KEYS.OPEN_TABLE_EDITOR:
+        this.props.showTableEditorModal();
+        break;
       case MENU_KEYS.REFRESH_DASHBOARD:
         this.props.forceRefreshAllCharts();
         this.props.addSuccessToast(t('Refreshing charts'));
@@ -245,6 +250,12 @@ class HeaderActionsDropdown extends React.PureComponent {
 
     return (
       <Menu selectable={false} data-test="header-actions-menu" {...rest}>
+        <Menu.Item
+          key={MENU_KEYS.OPEN_TABLE_EDITOR}
+          onClick={this.handleMenuClick}
+        >
+          Редактор таблицы
+        </Menu.Item>
         {!editMode && (
           <Menu.Item
             key={MENU_KEYS.REFRESH_DASHBOARD}

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Modal from 'src/components/Modal/Modal';
 import Button from 'src/components/Button';
-import { SupersetClient, css, styled, t } from '@superset-ui/core';
+import { SupersetClient, SupersetTheme, css, styled, t } from '@superset-ui/core';
 import Loading from 'src/components/Loading';
 import { Input } from 'src/components/Input';
 import { getClientErrorObject } from 'src/utils/getClientErrorObject';
@@ -9,15 +9,20 @@ import withToasts from 'src/components/MessageToasts/withToasts';
 import { AntdForm, Col, Row, Typography } from 'src/components';
 import { FormItem } from 'src/components/Form';
 import Collapse from 'src/components/Collapse';
+import Icons from 'src/components/Icons';
+import { Slice } from 'src/dashboard/types';
+import { Tooltip } from 'src/components/Tooltip';
 
 interface ColumnDefinition {
-  header: string;
+  name: string;
   type: string;
+  description?: string;
 }
 
 interface TableEditorColumnsProps {
   tableId: number;
-  tableName?: string;
+  name?: string;
+  description?: string;
   columns: ColumnDefinition[];
   placeholderData?: Record<string, any>;
   addSuccessToast: (message: string) => void;
@@ -25,8 +30,8 @@ interface TableEditorColumnsProps {
 }
 
 function getInitialValues(columns: ColumnDefinition[]): Record<string, any> {
-  return columns.reduce<Record<string, any>>((acc, { header }) => {
-    acc[header] = '';
+  return columns.reduce<Record<string, any>>((acc, { name }) => {
+    acc[name] = '';
     return acc;
   }, {});
 }
@@ -72,7 +77,7 @@ const TableEditorColumns = withToasts((props: TableEditorColumnsProps) => {
     setIsLoading(true);
 
     const types = columns.reduce<Record<string, string>>((acc, col) => {
-      acc[col.header] = col.type;
+      acc[col.name] = col.type;
       return acc;
     }, {});
 
@@ -130,28 +135,31 @@ const TableEditorColumns = withToasts((props: TableEditorColumnsProps) => {
       >
         <Row
           gutter={16}
-          css={css`
+          css={(theme: SupersetTheme) => css`
             position: sticky;
             top: 0;
             z-index: 1;
             padding-bottom: 8px;
+            background-color: ${theme.colors.grayscale.light5};
           `}
         >
-          <Col span={6}>
+          <Col span={5}>
             <Typography.Text strong>Колонка</Typography.Text>
           </Col>
           <Col span={9}>
             <Typography.Text strong>Предыдущее значение</Typography.Text>
           </Col>
+          <Col span={1} />
           <Col span={9}>
             <Typography.Text strong>Новое значение</Typography.Text>
           </Col>
         </Row>
-        {columns.map(({ header, type }) => {
+        {columns.map(({ name, type, description }) => {
           const inputType = {
-            INTEGER: 'number',
-            'DOUBLE PRECISION': 'number',
-            VARCHAR: 'text',
+            DATE: 'date',
+            DATETIME: 'datetime-local',
+            TIMESTAMP: 'datetime-local',
+            TIME: 'time',
           }[type];
 
           return (
@@ -161,17 +169,72 @@ const TableEditorColumns = withToasts((props: TableEditorColumnsProps) => {
                 margin-bottom: 8px;
               `}
             >
-              <Col span={6}>{header}</Col>
-              <Col span={9}>
-                <Input
-                  type={inputType}
-                  disabled
-                  value={placeholderData[header]}
-                />
+              <Col span={5}>
+                <Tooltip title={name} placement="top">
+                  <span>{description || name}</span>
+                </Tooltip>
               </Col>
               <Col span={9}>
-                <StyledFormItem name={header}>
-                  <Input type={inputType} name={header} />
+                <Input
+                  // type={inputType}
+                  disabled
+                  value={placeholderData[name]}
+                />
+              </Col>
+              <Col span={1}>
+                {['date', 'time', 'datetime-local'].includes(
+                  inputType as string,
+                ) ? (
+                  <Tooltip title="Текущее время" placement="top">
+                    <Button
+                      buttonStyle="link"
+                      onClick={() => {
+                        const dateTimeString = new Date().toISOString();
+                        let value: string;
+
+                        switch (inputType) {
+                          case 'date':
+                            value = dateTimeString.substring(0, 10);
+                            break;
+                          case 'time':
+                            value = dateTimeString.substring(11, 19);
+                            break;
+                          case 'datetime-local':
+                          default:
+                            value = dateTimeString.substring(0, 19);
+                            break;
+                        }
+
+                        form.setFieldsValue({
+                          [name]: value,
+                        });
+                      }}
+                      css={css`
+                        padding: 0;
+                      `}
+                    >
+                      <Icons.ClockCircleOutlined iconSize="l" />
+                    </Button>
+                  </Tooltip>
+                ) : (
+                  <Tooltip title="Test" placement="top">
+                    <Button
+                      buttonStyle="link"
+                      onClick={() => {
+                        form.setFieldsValue({ [name]: placeholderData[name] });
+                      }}
+                      css={css`
+                        padding: 0;
+                      `}
+                    >
+                      <Icons.DoubleRightOutlined iconSize="l" />
+                    </Button>
+                  </Tooltip>
+                )}
+              </Col>
+              <Col span={9}>
+                <StyledFormItem name={name}>
+                  <Input type={inputType} name={name} />
                 </StyledFormItem>
               </Col>
             </Row>
@@ -195,8 +258,10 @@ const TableEditorColumns = withToasts((props: TableEditorColumnsProps) => {
 type FetchTableJson = {
   id_table: number;
   name?: string;
+  description?: string;
   columns: {
     name: string;
+    description?: string;
     type: string;
     longType: string;
     comment?: string | null;
@@ -204,17 +269,9 @@ type FetchTableJson = {
   table_data?: Record<string, any>;
 }[];
 
-export interface TableEditorModalProps {
-  sliceId: number;
-  show?: boolean;
-  onHide?: () => void;
-}
+type TableEditorSliceProps = Slice;
 
-const TableEditorModal = ({
-  sliceId,
-  show = false,
-  onHide = () => {},
-}: TableEditorModalProps) => {
+const TableEditorSlice = ({ slice_id }: TableEditorSliceProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [tables, setTables] = useState<
     Omit<TableEditorColumnsProps, 'addDangerToast' | 'addSuccessToast'>[]
@@ -241,17 +298,19 @@ const TableEditorModal = ({
   const fetchTable = useCallback(() => {
     setIsLoading(true);
     SupersetClient.get({
-      endpoint: `/editortablesview/editor_table/${sliceId}/`,
+      endpoint: `/editortablesview/editor_table/${slice_id}/`,
     })
       .then(response => {
         setTables(
           ((response?.json as FetchTableJson) ?? []).map(
-            ({ id_table, columns, table_data, name }) => ({
+            ({ id_table, columns, table_data, name, description }) => ({
               tableId: id_table,
-              tableName: name,
-              columns: columns.map(({ name, type }) => ({
-                header: name as string,
+              name,
+              description,
+              columns: columns.map(({ name, type, description }) => ({
+                name,
                 type,
+                description,
               })),
               placeholderData: table_data,
             }),
@@ -261,13 +320,72 @@ const TableEditorModal = ({
       .finally(() => {
         setIsLoading(false);
       });
-  }, [sliceId]);
+  }, [slice_id]);
 
   useEffect(() => {
-    if (show) {
-      fetchTable();
+    fetchTable();
+  }, [fetchTable]);
+
+  return (
+    <div>
+      {isLoading ? (
+        <div css={{ position: 'relative', minHeight: '50px' }}>
+          <Loading />
+        </div>
+      ) : (
+        <Collapse
+          defaultActiveKey={activePanels}
+          onChange={handleActivePanelChange}
+        >
+          {tables.map((item, index) => (
+            <Collapse.Panel
+              key={item.tableId}
+              header={
+                item.name || item.description ? (
+                  <Tooltip title={item.name} placement="top">
+                    <Typography.Text>
+                      {item.description || item.name}
+                    </Typography.Text>
+                  </Tooltip>
+                ) : (
+                  <Typography.Text type="secondary">Не задано</Typography.Text>
+                )
+              }
+            >
+              <TableEditorColumns key={index} {...item} />
+            </Collapse.Panel>
+          ))}
+        </Collapse>
+      )}
+    </div>
+  );
+};
+
+export interface TableEditorModalProps {
+  slices: { [id: number]: Slice };
+  show?: boolean;
+  onHide?: () => void;
+}
+
+const TableEditorModal = ({
+  slices,
+  show = false,
+  onHide = () => {},
+}: TableEditorModalProps) => {
+  const [activePanels, setActivePanels] = useState<string[]>(
+    Object.keys(slices),
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => setActivePanels(Object.keys(slices)), [slices]);
+
+  function handleActivePanelChange(panels: string | string[]) {
+    if (typeof panels === 'string') {
+      setActivePanels([panels]);
+    } else {
+      setActivePanels(panels);
     }
-  }, [show, fetchTable]);
+  }
 
   return (
     <Modal
@@ -287,31 +405,27 @@ const TableEditorModal = ({
         }
       `}
     >
-      {isLoading ? (
-        <div css={{ position: 'relative', minHeight: '50px' }}>
-          <Loading />
-        </div>
-      ) : (
-        <Collapse
-          defaultActiveKey={activePanels}
-          onChange={handleActivePanelChange}
-        >
-          {tables.map((item, index) => (
-            <Collapse.Panel
-              key={item.tableId}
-              header={
-                item.tableName ? (
-                  <Typography.Text>{item.tableName}</Typography.Text>
-                ) : (
-                  <Typography.Text type="secondary">Не задано</Typography.Text>
-                )
-              }
-            >
-              <TableEditorColumns key={index} {...item} />
-            </Collapse.Panel>
-          ))}
-        </Collapse>
-      )}
+      <Collapse
+        defaultActiveKey={activePanels}
+        onChange={handleActivePanelChange}
+      >
+        {Object.values(slices).map(slice => (
+          <Collapse.Panel
+            key={slice.slice_id}
+            header={
+              slice.slice_name ? (
+                <Typography.Text strong>{slice.slice_name}</Typography.Text>
+              ) : (
+                <Typography.Text strong type="secondary">
+                  Не задано
+                </Typography.Text>
+              )
+            }
+          >
+            <TableEditorSlice key={slice.slice_id} {...slice} />
+          </Collapse.Panel>
+        ))}
+      </Collapse>
     </Modal>
   );
 };

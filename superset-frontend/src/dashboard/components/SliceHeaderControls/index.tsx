@@ -60,7 +60,6 @@ import { RootState } from 'src/dashboard/types';
 import { useCrossFiltersScopingModal } from '../nativeFilters/FilterBar/CrossFilters/ScopingModal/useCrossFiltersScopingModal';
 
 const MENU_KEYS = {
-  OPEN_TABLE_EDITOR: 'open_table_editor',
   DOWNLOAD_AS_IMAGE: 'download_as_image',
   EXPLORE_CHART: 'explore_chart',
   EXPORT_CSV: 'export_csv',
@@ -141,7 +140,6 @@ export interface SliceHeaderControlsProps {
   formData: QueryFormData;
   exploreUrl: string;
 
-  openTableEditor?: () => void;
   forceRefresh: (sliceId: number, dashboardId: number) => void;
   logExploreChart?: (sliceId: number) => void;
   logEvent?: (eventName: string, eventData?: object) => void;
@@ -276,9 +274,6 @@ const SliceHeaderControls = (props: SliceHeaderControlsPropsWithRouter) => {
     domEvent: MouseEvent<HTMLElement>;
   }) => {
     switch (key) {
-      case MENU_KEYS.OPEN_TABLE_EDITOR:
-        props.openTableEditor?.();
-        break;
       case MENU_KEYS.FORCE_REFRESH:
         refreshChart();
         props.addSuccessToast(t('Data refreshed'));
@@ -399,8 +394,6 @@ const SliceHeaderControls = (props: SliceHeaderControlsPropsWithRouter) => {
       <Menu.Item key={MENU_KEYS.FULLSCREEN}>{fullscreenLabel}</Menu.Item>
 
       <Menu.Divider />
-
-      <Menu.Item key={MENU_KEYS.OPEN_TABLE_EDITOR}>Редактор таблицы</Menu.Item>
 
       {slice.description && (
         <Menu.Item key={MENU_KEYS.TOGGLE_CHART_DESCRIPTION}>

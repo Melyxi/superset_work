@@ -42,7 +42,6 @@ import { slicePropShape, chartPropShape } from '../../util/propShapes';
 
 import { isFilterBox } from '../../util/activeDashboardFilters';
 import getFilterValuesByFilterId from '../../util/getFilterValuesByFilterId';
-import TableEditorModal from '../TableEditorModal';
 
 const propTypes = {
   id: PropTypes.number.isRequired,
@@ -130,14 +129,11 @@ class Chart extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      tableEditorIsShown: false,
       width: props.width,
       height: props.height,
       descriptionHeight: 0,
     };
 
-    this.openTableEditor = this.openTableEditor.bind(this);
-    this.closeTableEditor = this.closeTableEditor.bind(this);
     this.changeFilter = this.changeFilter.bind(this);
     this.handleFilterMenuOpen = this.handleFilterMenuOpen.bind(this);
     this.handleFilterMenuClose = this.handleFilterMenuClose.bind(this);
@@ -158,7 +154,6 @@ class Chart extends React.Component {
     // state so that we can buffer component size updates and only update on the final call
     // which improves performance significantly
     if (
-      nextState.tableEditorIsShown !== this.state.tableEditorIsShown ||
       nextState.width !== this.state.width ||
       nextState.height !== this.state.height ||
       nextState.descriptionHeight !== this.state.descriptionHeight ||
@@ -379,15 +374,6 @@ class Chart extends React.Component {
     );
   }
 
-  openTableEditor = () => {
-    console.log('open');
-    this.setState(() => ({ tableEditorIsShown: true }));
-  };
-
-  closeTableEditor = () => {
-    this.setState(() => ({ tableEditorIsShown: false }));
-  };
-
   render() {
     const {
       id,
@@ -423,7 +409,7 @@ class Chart extends React.Component {
       logEvent,
     } = this.props;
 
-    const { width, tableEditorIsShown } = this.state;
+    const { width } = this.state;
     // this prevents throwing in the case that a gridComponent
     // references a chart that is not associated with the dashboard
     if (!chart || !slice) {
@@ -466,7 +452,6 @@ class Chart extends React.Component {
           annotationQuery={chart.annotationQuery}
           logExploreChart={this.logExploreChart}
           logEvent={logEvent}
-          openTableEditor={this.openTableEditor}
           onExploreChart={this.onExploreChart}
           exportCSV={this.exportCSV}
           exportXLSX={this.exportXLSX}
@@ -488,11 +473,6 @@ class Chart extends React.Component {
           formData={formData}
           width={width}
           height={this.getHeaderHeight()}
-        />
-        <TableEditorModal
-          sliceId={slice.slice_id}
-          show={tableEditorIsShown}
-          onHide={this.closeTableEditor}
         />
         {/*
           This usage of dangerouslySetInnerHTML is safe since it is being used to render
