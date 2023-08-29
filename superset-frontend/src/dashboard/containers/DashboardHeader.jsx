@@ -62,6 +62,7 @@ import { fetchUISpecificReport } from 'src/reports/actions/reports';
 function mapStateToProps({
   dashboardLayout: undoableLayout,
   dashboardState,
+  sliceEntities,
   reports,
   dashboardInfo,
   charts,
@@ -76,6 +77,7 @@ function mapStateToProps({
     dashboardTitle: (
       (undoableLayout.present[DASHBOARD_HEADER_ID] || {}).meta || {}
     ).text,
+    slices: sliceEntities.slices,
     expandedSlices: dashboardState.expandedSlices,
     refreshFrequency: dashboardState.refreshFrequency,
     shouldPersistRefreshFrequency:

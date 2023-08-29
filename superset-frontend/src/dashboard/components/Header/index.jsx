@@ -57,6 +57,7 @@ import setPeriodicRunner, {
 import { PageHeaderWithActions } from 'src/components/PageHeaderWithActions';
 import { DashboardEmbedModal } from '../DashboardEmbedControls';
 import OverwriteConfirm from '../OverwriteConfirm';
+import TableEditorModal from '../TableEditorModal';
 
 const extensionsRegistry = getExtensionsRegistry();
 
@@ -184,6 +185,7 @@ class Header extends React.PureComponent {
       emphasizeUndo: false,
       emphasizeRedo: false,
       showingPropertiesModal: false,
+      showingTableEditorModal: false,
       isDropdownVisible: false,
     };
 
@@ -196,6 +198,8 @@ class Header extends React.PureComponent {
     this.overwriteDashboard = this.overwriteDashboard.bind(this);
     this.showPropertiesModal = this.showPropertiesModal.bind(this);
     this.hidePropertiesModal = this.hidePropertiesModal.bind(this);
+    this.showTableEditorModal = this.showTableEditorModal.bind(this);
+    this.hideTableEditorModal = this.hideTableEditorModal.bind(this);
     this.setIsDropdownVisible = this.setIsDropdownVisible.bind(this);
   }
 
@@ -427,6 +431,14 @@ class Header extends React.PureComponent {
     this.setState({ showingPropertiesModal: false });
   }
 
+  showTableEditorModal() {
+    this.setState({ showingTableEditorModal: true });
+  }
+
+  hideTableEditorModal() {
+    this.setState({ showingTableEditorModal: false });
+  }
+
   showEmbedModal = () => {
     this.setState({ showingEmbedModal: true });
   };
@@ -440,6 +452,7 @@ class Header extends React.PureComponent {
       dashboardTitle,
       layout,
       expandedSlices,
+      slices,
       customCss,
       colorNamespace,
       dataMask,
@@ -671,6 +684,7 @@ class Header extends React.PureComponent {
               userCanCurate={userCanCurate}
               isLoading={isLoading}
               showPropertiesModal={this.showPropertiesModal}
+              showTableEditorModal={this.showTableEditorModal}
               manageEmbedded={this.showEmbedModal}
               refreshLimit={refreshLimit}
               refreshWarning={refreshWarning}
@@ -693,6 +707,13 @@ class Header extends React.PureComponent {
             colorScheme={this.props.colorScheme}
             onSubmit={handleOnPropertiesChange}
             onlyApply
+          />
+        )}
+        {this.state.showingTableEditorModal && (
+          <TableEditorModal
+            slices={slices}
+            show={this.state.showingTableEditorModal}
+            onHide={this.hideTableEditorModal}
           />
         )}
 
