@@ -116,6 +116,26 @@ class CssTemplate(Model, AuditMixinNullable):
     css = Column(Text, default="")
 
 
+background_templates_dash = Table(
+    "background_templates_dash",
+    Model.metadata,
+    Column(
+        "background_id", Integer, ForeignKey("background_templates.id"), nullable=False
+    ),
+    Column("dashboard_id", Integer, ForeignKey("dashboards.id"), nullable=False),
+)
+
+
+class BackgroundTemplate(Model, AuditMixinNullable):
+    """Background templates for dashboards"""
+
+    __tablename__ = "background_templates"
+    id = Column(Integer, primary_key=True)
+    background_name = Column(String(250))
+    background_uri = Column(String(250), default="")
+    dashboards = relationship("Dashboard", secondary=background_templates_dash)
+
+
 class ConfigurationMethod(str, enum.Enum):
     SQLALCHEMY_FORM = "sqlalchemy_form"
     DYNAMIC_FORM = "dynamic_form"

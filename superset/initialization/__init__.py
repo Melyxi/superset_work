@@ -122,6 +122,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.annotation_layers.api import AnnotationLayerRestApi
         from superset.async_events.api import AsyncEventsRestApi
         from superset.available_domains.api import AvailableDomainsRestApi
+        from superset.background_templates.api import BackgroundTemplateRestApi
         from superset.cachekeys.api import CacheRestApi
         from superset.charts.api import ChartRestApi
         from superset.charts.data.api import ChartDataRestApi
@@ -160,6 +161,10 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.views.all_entities import TaggedObjectsModelView, TaggedObjectView
         from superset.views.annotations import AnnotationLayerView
         from superset.views.api import Api
+        from superset.views.background_templates import (
+            BackgroundTemplateAsyncModelView,
+            BackgroundTemplateModelView,
+        )
         from superset.views.chart.views import SliceAsync, SliceModelView
         from superset.views.core import Superset
         from superset.views.css_templates import (
@@ -206,6 +211,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_api(ChartRestApi)
         appbuilder.add_api(ChartDataRestApi)
         appbuilder.add_api(CssTemplateRestApi)
+        appbuilder.add_api(BackgroundTemplateRestApi)
         appbuilder.add_api(CurrentUserRestApi)
         appbuilder.add_api(DashboardFilterStateRestApi)
         appbuilder.add_api(DashboardPermalinkRestApi)
@@ -292,12 +298,22 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
             category_label=__("Manage"),
             category_icon="",
         )
+        appbuilder.add_view(
+            BackgroundTemplateModelView,
+            "Background Templates",
+            label=__("Background Templates"),
+            icon="fa-css3",
+            category="Manage",
+            category_label=__("Manage"),
+            category_icon="",
+        )
 
         #
         # Setup views with no menu
         #
         appbuilder.add_view_no_menu(Api)
         appbuilder.add_view_no_menu(CssTemplateAsyncModelView)
+        appbuilder.add_view_no_menu(BackgroundTemplateAsyncModelView)
         appbuilder.add_view_no_menu(CsvToDatabaseView)
         appbuilder.add_view_no_menu(ExcelToDatabaseView)
         appbuilder.add_view_no_menu(ColumnarToDatabaseView)
