@@ -3,6 +3,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import pytz
 from flask import current_app, jsonify, request
 from flask_appbuilder import expose, has_access
 from sqlalchemy import text
@@ -41,7 +42,6 @@ class EditorTablesView(Superset):
 
     @expose("/get_column_comment/<int:table_pk>/", methods=["GET"])
     def get_column_comment(self, table_pk: int) -> str:
-        print(table_pk)
         if table_pk:
             list_column = []
             table = get_table_by_id(table_pk)
@@ -137,7 +137,6 @@ class EditorTablesView(Superset):
     def get_table(self, table: Any) -> FlaskResponse:
         if table:
             try:
-                print(table)
                 table = get_table_by_id(table)
                 engine_db = get_db_engine(table.database_id, table.schema)
                 db = get_db(table.database_id)
@@ -156,7 +155,6 @@ class EditorTablesView(Superset):
                             "timeRange": time_range.get("timeRange"),
                         }
                         time_range["result"] = result_time_range
-                    print(time_range)
                     query = self.build_query_sql(query, time_range, table)
 
                     df = pd.read_sql_query(query, conn)
@@ -195,13 +193,13 @@ class EditorTablesView(Superset):
         for col in columns:
             if col.reference_table and col.reference_column:
                 table = get_table_by_id(col.reference_table)
-
                 columns = (
                     session.get_session.query(TableColumn)
                     .filter(TableColumn.table_id == table.id)
                     .all()
                 )
                 description_col = {}
+
                 for column_desc in columns:
                     description_col[column_desc.column_name] = column_desc.description
 
@@ -212,29 +210,36 @@ class EditorTablesView(Superset):
                         column_info["description"] = description_col[
                             column_info["name"]
                         ]
-
                 engine_db = get_db_engine(table.database_id, table.schema)
                 col_desc = table_info["columns"][0]["name"]
-                print(col_desc)
+                # print(col_desc)
                 insert_query = (
                     table_info["selectStar"].split("LIMIT")[0]
                     + f'ORDER BY "{col_desc}" DESC LIMIT 1;'
                 )
                 query = text(insert_query)
+                timezone = pytz.timezone("UTC")
+
                 with engine_db.connect() as conn:
                     result = conn.execute(query)
                     columns = result.keys()
 
-                    print(columns)
+                    # print(columns)
                     # Выводим результаты
                     for row in result:
                         dict_row = dict(zip(columns, row))
-                print(dict_row)
+                    for column_time in table_info["columns"]:
+                        if column_time["type"] in ["TIMESTAMP"]:
+                            new_time = timezone.localize(
+                                dict_row[column_time["name"]]
+                            ).strftime("%Y-%m-%d %H:%M:%S %Z")
+                            dict_row[column_time["name"]] = new_time
+                # print(dict_row)
 
                 table_info.update(
                     {"id_table": col.reference_table, "table_data": dict_row}
                 )
-
+                table_info["description"] = table.description
                 reference_tables.append(table_info)
 
         return jsonify(reference_tables), 200
