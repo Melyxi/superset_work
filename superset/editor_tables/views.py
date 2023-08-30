@@ -8,6 +8,7 @@ from flask import current_app, jsonify, request
 from flask_appbuilder import expose, has_access
 from sqlalchemy import text
 
+from superset import SupersetSecurityManager
 from superset.comments.utils import (
     get_column_filter_by,
     get_db,
@@ -16,9 +17,11 @@ from superset.comments.utils import (
     get_tables_comments,
     LIMIT_ROWS,
 )
+from superset.connectors.base.models import DatasourceKind
 from superset.connectors.sqla.models import TableColumn
 from superset.databases.utils import get_table_metadata
 from superset.extensions import csrf
+from superset.models.core import Database
 from superset.models.slice import Slice
 from superset.superset_typing import FlaskResponse
 from superset.utils.date_parser import get_since_until
@@ -174,6 +177,53 @@ class EditorTablesView(Superset):
 
         return jsonify({}), 404
 
+    def retrieve_table(
+        self, session: SupersetSecurityManager, table: Any
+    ) -> dict[str, Any]:
+        db = get_db(table.database_id)
+        table_info = get_table_metadata(db, table.table_name, table.schema)
+        columns = (
+            session.get_session.query(TableColumn)
+            .filter(TableColumn.table_id == table.id)
+            .all()
+        )
+        description_col = {}
+
+        for column_desc in columns:
+            description_col[column_desc.column_name] = column_desc.description
+        if table_info.get("columns"):
+            for column_info in table_info["columns"]:
+                column_info["description"] = description_col[column_info["name"]]
+        engine_db = get_db_engine(table.database_id, table.schema)
+        col_desc = table_info["columns"][0]["name"]
+        # print(col_desc)
+        insert_query = (
+            table_info["selectStar"].split("LIMIT")[0]
+            + f'ORDER BY "{col_desc}" DESC LIMIT 1;'
+        )
+        query = text(insert_query)
+        timezone = pytz.timezone("UTC")
+
+        with engine_db.connect() as conn:
+            result = conn.execute(query)
+            columns = result.keys()
+
+            # print(columns)
+            # Выводим результаты
+            for row in result:
+                dict_row = dict(zip(columns, row))
+            for column_time in table_info["columns"]:
+                if column_time["type"] in ["TIMESTAMP"]:
+                    new_time = timezone.localize(
+                        dict_row[column_time["name"]]
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+                    dict_row[column_time["name"]] = new_time
+        # print(dict_row)
+
+        table_info.update({"id_table": table.id, "table_data": dict_row})
+        table_info["description"] = table.description
+        return table_info
+
     # @csrf.exempt
     @expose("/editor_table/<int:slice_id>/", methods=["GET"])
     def editor_table_slice(self, slice_id: int) -> FlaskResponse:
@@ -182,67 +232,34 @@ class EditorTablesView(Superset):
         slice = session.get_session.query(Slice).get(slice_id)
         # находим таблицу
         table = slice.table
-        # находим колонки по таблице
-        columns = (
-            session.get_session.query(TableColumn)
-            .filter(TableColumn.table_id == table.id)
-            .all()
-        )
-        # находим связанные колонки и таблицы
-        reference_tables = []
-        for col in columns:
-            if col.reference_table and col.reference_column:
-                table = get_table_by_id(col.reference_table)
-                columns = (
-                    session.get_session.query(TableColumn)
-                    .filter(TableColumn.table_id == table.id)
-                    .all()
-                )
-                description_col = {}
+        # print(Database().has_view(table.table_name, table.schema))
 
-                for column_desc in columns:
-                    description_col[column_desc.column_name] = column_desc.description
+        if table.kind == DatasourceKind.PHYSICAL:
+            reference_tables = []
+            table_info = self.retrieve_table(session, table)
+            reference_tables.append(table_info)
 
-                db = get_db(table.database_id)
-                table_info = get_table_metadata(db, table.table_name, table.schema)
-                if table_info.get("columns"):
-                    for column_info in table_info["columns"]:
-                        column_info["description"] = description_col[
-                            column_info["name"]
-                        ]
-                engine_db = get_db_engine(table.database_id, table.schema)
-                col_desc = table_info["columns"][0]["name"]
-                # print(col_desc)
-                insert_query = (
-                    table_info["selectStar"].split("LIMIT")[0]
-                    + f'ORDER BY "{col_desc}" DESC LIMIT 1;'
-                )
-                query = text(insert_query)
-                timezone = pytz.timezone("UTC")
+            return jsonify(reference_tables), 200
 
-                with engine_db.connect() as conn:
-                    result = conn.execute(query)
-                    columns = result.keys()
+        elif table.kind == DatasourceKind.VIRTUAL:
+            # находим колонки по таблице
+            columns = (
+                session.get_session.query(TableColumn)
+                .filter(TableColumn.table_id == table.id)
+                .all()
+            )
+            # находим связанные колонки и таблицы
+            reference_tables = []
+            for col in columns:
+                if col.reference_table and col.reference_column:
+                    table = get_table_by_id(col.reference_table)
+                    table_info = self.retrieve_table(session, table)
+                    reference_tables.append(table_info)
 
-                    # print(columns)
-                    # Выводим результаты
-                    for row in result:
-                        dict_row = dict(zip(columns, row))
-                    for column_time in table_info["columns"]:
-                        if column_time["type"] in ["TIMESTAMP"]:
-                            new_time = timezone.localize(
-                                dict_row[column_time["name"]]
-                            ).strftime("%Y-%m-%d %H:%M:%S %Z")
-                            dict_row[column_time["name"]] = new_time
-                # print(dict_row)
+            return jsonify(reference_tables), 200
 
-                table_info.update(
-                    {"id_table": col.reference_table, "table_data": dict_row}
-                )
-                table_info["description"] = table.description
-                reference_tables.append(table_info)
-
-        return jsonify(reference_tables), 200
+        else:
+            return jsonify({}), 400
 
     @csrf.exempt
     @expose("/editor_table_insert/", methods=["POST"])
