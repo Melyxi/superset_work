@@ -178,8 +178,8 @@ const DatasourceModal: FunctionComponent<DatasourceModalProps> = ({
             python_date_format: column.python_date_format || null,
             uuid: column.uuid,
             extra: buildExtraJsonObject(column),
-            reference_column: column.reference_column,
-            reference_table: column.reference_table,
+            reference_column: column.reference_column || null,
+            reference_table: column.reference_table || null,
           }),
         ),
         owners: currentDatasource.owners.map(

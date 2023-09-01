@@ -490,26 +490,30 @@ function ColumnCollectionTable({
                 />
               }
             />
-            <Field
-              fieldKey="reference_table"
-              label={t('Table')}
-              control={
-                <ReferenceTableSelect
-                  controlId="referenceTable"
-                  placeholder={t('Table')}
-                />
-              }
-            />
-            <Field
-              fieldKey="reference_column"
-              label={t('Column')}
-              control={
-                <ReferenceColumnSelect
-                  controlId="referenceColumn"
-                  placeholder={t('Column')}
-                />
-              }
-            />
+            {datasource.kind === DATASOURCE_TYPES.virtual.key ? (
+              <Field
+                fieldKey="reference_table"
+                label={t('Table')}
+                control={
+                  <ReferenceTableSelect
+                    controlId="referenceTable"
+                    placeholder={t('Table')}
+                  />
+                }
+              />
+            ) : null}
+            {datasource.kind === DATASOURCE_TYPES.virtual.key ? (
+              <Field
+                fieldKey="reference_column"
+                label={t('Column')}
+                control={
+                  <ReferenceColumnSelect
+                    controlId="referenceColumn"
+                    placeholder={t('Column')}
+                  />
+                }
+              />
+            ) : null}
           </Fieldset>
         </FormContainer>
       }
