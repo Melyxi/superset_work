@@ -80,8 +80,8 @@ const BuilderComponentPane = ({ topOffset = 0 }) => (
         </Tabs.TabPane>
         <Tabs.TabPane key={2} tab={t('Layout elements')}>
           <NewTabs />
-          <NewRow />
-          <NewColumn />
+          {/* <NewRow />
+          <NewColumn /> */}
           <NewHeader />
           <NewMarkdown />
           <NewDivider />

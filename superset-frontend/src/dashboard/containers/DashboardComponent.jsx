@@ -16,17 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React from 'react';
+import React, { useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import {
+  NodeResizeControl,
+  useStore as useReactflowStore,
+  useReactFlow,
+  NodeToolbar,
+  Position,
+} from 'reactflow';
 import { logEvent } from 'src/logger/actions';
 import { addDangerToast } from 'src/components/MessageToasts/actions';
-import { componentLookup } from 'src/dashboard/components/gridComponents';
+import { componentLayoutLookup, componentLookup } from 'src/dashboard/components/gridComponents';
 import getDetailedComponentWidth from 'src/dashboard/util/getDetailedComponentWidth';
 import { getActiveFilters } from 'src/dashboard/util/activeDashboardFilters';
 import { componentShape } from 'src/dashboard/util/propShapes';
-import { COLUMN_TYPE, ROW_TYPE } from 'src/dashboard/util/componentTypes';
+import {
+  CHART_TYPE,
+  COLUMN_TYPE,
+  MARKDOWN_TYPE,
+  ROW_TYPE,
+} from 'src/dashboard/util/componentTypes';
 import {
   createComponent,
   deleteComponent,
@@ -38,6 +50,7 @@ import {
   setActiveTabs,
   setFullSizeChartId,
 } from 'src/dashboard/actions/dashboardState';
+import DeleteComponentButton from '../components/DeleteComponentButton';
 
 const propTypes = {
   id: PropTypes.string,
@@ -72,6 +85,7 @@ function mapStateToProps(
   const { id, parentId } = ownProps;
   const component = dashboardLayout[id];
   const props = {
+    id,
     component,
     getComponentById: id => dashboardLayout[id],
     parentComponent: dashboardLayout[parentId],
@@ -116,12 +130,53 @@ function mapDispatchToProps(dispatch) {
   );
 }
 
-class DashboardComponent extends React.PureComponent {
-  render() {
-    const { component } = this.props;
-    const Component = component ? componentLookup[component.type] : null;
-    return Component ? <Component {...this.props} /> : null;
+const DashboardComponent = (props) => {
+  const { id, component } = props;
+  const componentState = useReactflowStore((state) => state.nodeInternals.get(id));
+  const { deleteElements } = useReactFlow();
+
+  const handleDeleteComponent = useCallback(() => {
+    deleteElements({ nodes: [{ id }] });
+  }, [deleteElements, id]);
+
+  const Component = component ? componentLookup[component.type] : null;
+  const layoutConfig = component ? componentLayoutLookup[component.type] : null;
+  const element = Component
+    ? (
+      <Component
+        size={component.type === CHART_TYPE || component.type === MARKDOWN_TYPE ? {
+          width: componentState?.width,
+          height: componentState?.height,
+        } : undefined}
+        {...props}
+      />
+    )
+    : null;
+
+  if (props.editMode) {
+    return (
+      <>
+        {element}
+        {layoutConfig ? layoutConfig.resizeControls.map((c) => (
+          <NodeResizeControl
+            key={c}
+            position={c}
+            minWidth={layoutConfig.minWidth}
+            minHeight={layoutConfig.minHeight}
+          />
+        )) : null}
+        {layoutConfig?.toolbar ? (
+          <NodeToolbar position={Position.Left}>
+            <DeleteComponentButton
+              onDelete={handleDeleteComponent}
+            />
+          </NodeToolbar>
+        ) : null}
+      </>
+    );
   }
+
+  return element;
 }
 
 DashboardComponent.propTypes = propTypes;

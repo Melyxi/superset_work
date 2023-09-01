@@ -27,6 +27,7 @@ import {
   NativeFiltersState,
 } from '@superset-ui/core';
 import { Dataset } from '@superset-ui/chart-controls';
+import { Node } from 'reactflow';
 import { chart } from 'src/components/Chart/chartReducer';
 import componentTypes from 'src/dashboard/util/componentTypes';
 import { UrlParamEntries } from 'src/utils/urlUtils';
@@ -189,6 +190,7 @@ export type LayoutItem = {
     text?: string;
     uuid: string;
     width: number;
+    layout?: Node[];
   };
 };
 

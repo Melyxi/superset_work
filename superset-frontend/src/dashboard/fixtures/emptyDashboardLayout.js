@@ -33,6 +33,9 @@ export default {
     type: DASHBOARD_ROOT_TYPE,
     id: DASHBOARD_ROOT_ID,
     children: [DASHBOARD_GRID_ID],
+    meta: {
+      layout: [],
+    },
   },
 
   [DASHBOARD_GRID_ID]: {
@@ -40,7 +43,9 @@ export default {
     id: DASHBOARD_GRID_ID,
     children: [],
     parents: [DASHBOARD_ROOT_ID],
-    meta: {},
+    meta: {
+      layout: [],
+    },
   },
 
   [DASHBOARD_HEADER_ID]: {

@@ -31,6 +31,7 @@ import {
 } from '@superset-ui/core';
 import { ParentSize } from '@visx/responsive';
 import pick from 'lodash/pick';
+import { ReactFlowProvider } from 'reactflow';
 import Tabs from 'src/components/Tabs';
 import DashboardGrid from 'src/dashboard/containers/DashboardGrid';
 import {
@@ -235,6 +236,7 @@ const DashboardContainer: FC<DashboardContainerProps> = ({ topLevelTabs }) => {
             fullWidth={false}
             animated={false}
             allowOverflow
+            css={{ height: '100%', '& .ant-tabs-content': { height: '100%' } }}
           >
             {childIds.map((id, index) => (
               // Matching the key of the first TabPane irrespective of topLevelTabs
@@ -243,13 +245,16 @@ const DashboardContainer: FC<DashboardContainerProps> = ({ topLevelTabs }) => {
               <Tabs.TabPane
                 key={index === 0 ? DASHBOARD_GRID_ID : index.toString()}
               >
-                <DashboardGrid
-                  gridComponent={dashboardLayout[id]}
-                  // see isValidChild for why tabs do not increment the depth of their children
-                  depth={DASHBOARD_ROOT_DEPTH + 1} // (topLevelTabs ? 0 : 1)}
-                  width={width}
-                  isComponentVisible={index === tabIndex}
-                />
+                <ReactFlowProvider>
+                  <DashboardGrid
+                    id={id}
+                    gridComponent={dashboardLayout[id]}
+                    // see isValidChild for why tabs do not increment the depth of their children
+                    depth={DASHBOARD_ROOT_DEPTH + 1} // (topLevelTabs ? 0 : 1)}
+                    width={width}
+                    isComponentVisible={index === tabIndex}
+                  />
+                </ReactFlowProvider>
               </Tabs.TabPane>
             ))}
           </Tabs>

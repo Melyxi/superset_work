@@ -245,7 +245,7 @@ const ReferenceTableSelect = withToasts(
 
 const ReferenceColumnSelect = withToasts(
   ({ addDangerToast, onChange, value, values, placeholder, ...props }) => {
-    const tableId = values.reference_table ?? 0;
+    const tableId = values?.reference_table ?? 0;
     const [options, setOptions] = useState([]);
     const prevTableId = useRef(tableId);
     const handleOnChange = val => {

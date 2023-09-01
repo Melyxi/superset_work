@@ -64,6 +64,8 @@ export default function handleDrop(props, monitor, Component) {
       type: draggingItem.type,
       meta: draggingItem.meta,
     },
+    monitor,
+    Component,
   };
 
   // simplest case, append as child

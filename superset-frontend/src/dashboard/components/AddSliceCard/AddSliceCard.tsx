@@ -170,6 +170,7 @@ const AddSliceCard: React.FC<{
   style = {},
   thumbnailUrl,
   visType,
+  ...other
 }) => {
   const showThumbnails = isFeatureEnabled(FeatureFlag.THUMBNAILS);
   const [sliceAddedBadge, setSliceAddedBadge] = useState<HTMLDivElement>();
@@ -180,7 +181,7 @@ const AddSliceCard: React.FC<{
   );
 
   return (
-    <div ref={innerRef} style={style}>
+    <div ref={innerRef} style={style} {...other}>
       <div
         data-test="chart-card"
         css={(theme: Theme) => css`

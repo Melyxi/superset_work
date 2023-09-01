@@ -212,16 +212,17 @@ export function handleComponentDrop(dropResult) {
       return dispatch(
         addWarningToast(t('Can not move top level tab into nested tabs')),
       );
-    } else if (
-      destination &&
-      source &&
-      !(
-        // ensure it has moved
-        (destination.id === source.id && destination.index === source.index)
-      )
-    ) {
-      dispatch(moveComponent(dropResult));
     }
+    // } else if (
+    //   destination &&
+    //   source &&
+    //   !(
+    //     // ensure it has moved
+    //     (destination.id === source.id && destination.index === source.index)
+    //   )
+    // ) {
+    //   dispatch(moveComponent(dropResult));
+    // }
 
     // call getState() again down here in case redux state is stale after
     // previous dispatch(es)
@@ -266,6 +267,16 @@ export function handleComponentDrop(dropResult) {
     return null;
   };
 }
+
+// Change layout
+export const DASHBOARD_LAYOUT_CHANGE = 'DASHBOARD_LAYOUT_CHANGE';
+export const dashboardLayoutChange = setUnsavedChangesAfterAction((id, layout) => ({
+  type: DASHBOARD_LAYOUT_CHANGE,
+  payload: {
+    id,
+    layout,
+  },
+}));
 
 // Undo redo ------------------------------------------------------------------
 export function undoLayoutAction() {

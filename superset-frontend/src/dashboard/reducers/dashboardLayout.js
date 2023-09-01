@@ -41,6 +41,7 @@ import {
   CREATE_TOP_LEVEL_TABS,
   DELETE_TOP_LEVEL_TABS,
   DASHBOARD_TITLE_CHANGED,
+  DASHBOARD_LAYOUT_CHANGE,
 } from '../actions/dashboardLayout';
 
 import { HYDRATE_DASHBOARD } from '../actions/hydrate';
@@ -72,6 +73,18 @@ export function recursivelyDeleteChildren(
         nextComponents[componentParentId] = {
           ...parent,
           children: nextChildren,
+        };
+      }
+
+      const componentLayoutIndex = (parent.meta?.layout ?? []).indexOf(componentId);
+      if (componentLayoutIndex > -1) {
+        const nextLayout = [...parent.meta.layout];
+        nextLayout.splice(componentIndex, 1);
+        nextComponents[componentParentId] = {
+          ...parent,
+          meta: {
+            layout: nextLayout,
+          },
         };
       }
     }
@@ -205,6 +218,9 @@ const actionHandlers = {
       const childrenToMove = [...topLevelComponent.children].filter(
         id => id !== dragging.id,
       );
+      const layoutToMove = [...(topLevelComponent.meta.layout ?? [])].filter(
+        ({ id }) => id !== dragging.id,
+      );
 
       return {
         ...state,
@@ -215,10 +231,21 @@ const actionHandlers = {
         [topLevelId]: {
           ...topLevelComponent,
           children: [],
+          meta: {
+            ...topLevelComponent.meta,
+            layout: [],
+          }
         },
         [draggingTabId]: {
           ...draggingTab,
           children: [...draggingTab.children, ...childrenToMove],
+          meta: {
+            ...draggingTab.meta,
+            layout: [
+              ...(draggingTab.meta.layout ?? []),
+              ...layoutToMove,
+            ],
+          },
         },
       };
     }
@@ -234,7 +261,15 @@ const actionHandlers = {
     );
 
     tabComponent.children = [...topLevelComponent.children];
-    newEntities[topLevelId] = { ...topLevelComponent, children: [] };
+    tabComponent.meta.layout = [...(topLevelComponent.meta.layout ?? [])];
+    newEntities[topLevelId] = {
+      ...topLevelComponent,
+      children: [],
+      meta: {
+        ...topLevelComponent.meta,
+        layout: [],
+      },
+    };
     newEntities[DASHBOARD_ROOT_ID] = {
       ...rootComponent,
       children: [tabsComponent.id],
@@ -254,11 +289,13 @@ const actionHandlers = {
     if (topLevelTabs.type !== TABS_TYPE) return state;
 
     let childrenToMove = [];
+    let layoutToMove = [];
     const nextEntities = { ...state };
 
     topLevelTabs.children.forEach(tabId => {
       const tabComponent = state[tabId];
       childrenToMove = [...childrenToMove, ...tabComponent.children];
+      layoutToMove = [...layoutToMove, ...(tabComponent.meta.layout ?? [])];
       delete nextEntities[tabId];
     });
 
@@ -272,6 +309,10 @@ const actionHandlers = {
     nextEntities[DASHBOARD_GRID_ID] = {
       ...state[DASHBOARD_GRID_ID],
       children: childrenToMove,
+      meta: {
+        ...state[DASHBOARD_GRID_ID].meta,
+        layout: layoutToMove,
+      },
     };
 
     return nextEntities;
@@ -300,6 +341,23 @@ const actionHandlers = {
         meta: {
           ...state[DASHBOARD_HEADER_ID].meta,
           text: action.text,
+        },
+      },
+    };
+  },
+
+  [DASHBOARD_LAYOUT_CHANGE](state, action) {
+    const {
+      payload: { id, layout },
+    } = action;
+
+    return {
+      ...state,
+      [id]: {
+        ...(state[id] ?? {}),
+        meta: {
+          ...(state[id]?.meta ?? {}),
+          layout,
         },
       },
     };

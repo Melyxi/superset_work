@@ -86,6 +86,7 @@ import {
 import { getRootLevelTabsComponent, shouldFocusTabs } from './utils';
 import DashboardContainer from './DashboardContainer';
 import { useNativeFilters } from './state';
+import { reactFlowStyles } from './reactflowStyles';
 
 type DashboardBuilderProps = {};
 
@@ -293,12 +294,25 @@ const DashboardContentWrapper = styled.div`
           left: 0;
           z-index: 1;
           pointer-events: none;
-          border: 1px solid transparent;
+          // TODO:
+          border: 1px solid ${theme.colors.grayscale.light3};
+          transition: border-width, border-color 0.15s ease-in-out;
         }
 
         &:hover:after {
           border: 1px dashed ${theme.colors.primary.base};
           z-index: 2;
+        }
+      }
+
+      ${reactFlowStyles}
+
+      .react-flow__node.selected,
+      .react-flow__node:hover,
+      .react-flow__node:focus {
+        & > .dashboard-component-chart-holder:after {
+          border: 2px solid @indicator-color;
+          z-index: @z-index-chart--dragging;
         }
       }
 
@@ -354,6 +368,7 @@ const StyledDashboardContent = styled.div<{
     .grid-container {
       /* without this, the grid will not get smaller upon toggling the builder panel on */
       width: 0;
+      height: 100%;
       flex: 1;
       position: relative;
       margin-top: ${theme.gridUnit * 6}px;
@@ -384,7 +399,7 @@ const StyledDashboardContent = styled.div<{
       height: 100%;
       background-color: ${theme.colors.grayscale.light5};
       position: relative;
-      padding: ${theme.gridUnit * 4}px;
+      // padding: ${theme.gridUnit * 4}px;
       overflow-y: visible;
 
       // transitionable traits to show filter relevance
@@ -418,6 +433,29 @@ const StyledDashboardContent = styled.div<{
           font-size: ${theme.typography.sizes.s}px;
           position: relative;
           display: flex;
+        }
+      }
+    }
+
+    .react-flow__node {
+      .react-flow__resize-control.handle {
+        width: 7px;
+        height: 7px;
+        background-color: @indicator-color;
+        border: 1px solid ${theme.colors.grayscale.light5};
+        border-radius: 0;
+        opacity: 0;
+        transition: opacity 0.15s ease-in-out;
+        z-index: 1;
+      }
+
+      &.selected,
+      &:hover,
+      &:focus {
+        z-index: 1000 !important;
+
+        .react-flow__resize-control.handle.handle {
+          opacity: 1;
         }
       }
     }

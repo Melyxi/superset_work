@@ -23,6 +23,8 @@ import DashboardGrid from '../components/DashboardGrid';
 import {
   handleComponentDrop,
   resizeComponent,
+  dashboardLayoutChange,
+  deleteComponent,
 } from '../actions/dashboardLayout';
 import { setDirectPathToChild, setEditMode } from '../actions/dashboardState';
 
@@ -41,6 +43,8 @@ function mapDispatchToProps(dispatch) {
       resizeComponent,
       setDirectPathToChild,
       setEditMode,
+      dashboardLayoutChange,
+      deleteComponent,
     },
     dispatch,
   );

@@ -22,9 +22,10 @@ import newComponentFactory from './newComponentFactory';
 import getComponentWidthFromDrop from './getComponentWidthFromDrop';
 
 import { ROW_TYPE, TABS_TYPE, TAB_TYPE } from './componentTypes';
+import { componentLayoutLookup } from '../components/gridComponents';
 
 export default function newEntitiesFromDrop({ dropResult, layout }) {
-  const { dragging, destination } = dropResult;
+  const { dragging, destination, position } = dropResult;
 
   const dragType = dragging.type;
   const dropEntity = layout[destination.id];
@@ -32,28 +33,11 @@ export default function newEntitiesFromDrop({ dropResult, layout }) {
   let newDropChild = newComponentFactory(dragType, dragging.meta);
   newDropChild.parents = (dropEntity.parents || []).concat(dropEntity.id);
 
-  if (componentIsResizable(dragging)) {
-    newDropChild.meta.width = // don't set a 0 width
-      getComponentWidthFromDrop({ dropResult, layout }) || undefined;
-  }
-
-  const wrapChildInRow = shouldWrapChildInRow({
-    parentType: dropType,
-    childType: dragType,
-  });
-
   const newEntities = {
     [newDropChild.id]: newDropChild,
   };
 
-  if (wrapChildInRow) {
-    const rowWrapper = newComponentFactory(ROW_TYPE);
-    rowWrapper.children = [newDropChild.id];
-    rowWrapper.parents = (dropEntity.parents || []).concat(dropEntity.id);
-    newEntities[rowWrapper.id] = rowWrapper;
-    newDropChild.parents = rowWrapper.parents.concat(rowWrapper.id);
-    newDropChild = rowWrapper;
-  } else if (dragType === TABS_TYPE) {
+  if (dragType === TABS_TYPE) {
     // create a new tab component
     const tabChild = newComponentFactory(TAB_TYPE);
     tabChild.parents = (dropEntity.parents || []).concat(dropEntity.id);
@@ -64,8 +48,29 @@ export default function newEntitiesFromDrop({ dropResult, layout }) {
   const nextDropChildren = [...dropEntity.children];
   nextDropChildren.splice(destination.index, 0, newDropChild.id);
 
+  const layoutConfig = componentLayoutLookup[dragType];
+
   newEntities[destination.id] = {
     ...dropEntity,
+    meta: {
+      ...(dropEntity.meta ?? {}),
+      layout: [
+        ...(dropEntity.meta?.layout ?? []),
+        {
+          id: newDropChild.id,
+          type: 'DashboardComponent',
+          position: {
+            x: position?.x ?? 0,
+            y: position?.y ?? 0,
+          },
+          data: { ...newDropChild },
+          style: {
+            width: layoutConfig?.width ?? 200,
+            height: layoutConfig?.height ?? 200,
+          },
+        },
+      ],
+    },
     children: nextDropChildren,
   };
 
