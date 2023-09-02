@@ -383,6 +383,27 @@ const styleIconOptions = (theme: SupersetTheme) => [
   },
 ];
 
+const setRadioFormat = (config?: ConditionalFormattingConfig) => {
+  const { radioFormat } = config || {};
+
+  let isStyle = false;
+  let isColor = true;
+  let isNull = false;
+  if (radioFormat !== undefined) {
+    if (radioFormat !== null) {
+      if (radioFormat === 'style') {
+        isStyle = true;
+        isColor = false;
+      }
+    } else {
+      isNull = true;
+      isStyle = false;
+      isColor = false;
+    }
+  }
+  return { isStyle, isColor, isNull };
+};
+
 export const FormattingPopoverContent = ({
   config,
   onChange,
@@ -394,21 +415,43 @@ export const FormattingPopoverContent = ({
   columns: { label: string; value: string }[];
   columnNan: { label: string; value: string }[];
 }) => {
+  const { isStyle, isColor, isNull } = setRadioFormat(config);
   const theme = useTheme();
   const colorScheme = colorSchemeOptions(theme);
   const styleScheme = styleSchemeOptions(theme);
   const iconSchema = styleIconOptions(theme);
-  const onIcon = false;
   const formatterValue = false;
   const radioFormat = RadioValueFormatOptions[1][0];
   const radioSide = RadioValueSideIconOptions[0][0];
-  const [onStyle, setChecked] = React.useState(false);
-  const [onColor, setCheckedColor] = React.useState(true);
-  const handleChange = () => {
-    setChecked(!onStyle);
-    setCheckedColor(!onColor);
-    return !onColor;
+
+  const [onStyle, setCheckedStyle] = React.useState(isStyle);
+  const [onColor, setCheckedColor] = React.useState(isColor);
+  const [onNull, setCheckedNull] = React.useState(isNull);
+  const [onIcon, setCheckedIcon] = React.useState(
+    config ? config.onIcon : false,
+  );
+  const leftSide = true;
+  const [onLeftSide, setCheckedLeft] = React.useState(leftSide);
+
+  const handleChange = (value: string | null) => {
+    if (value === 'style') {
+      setCheckedStyle(true);
+      setCheckedColor(false);
+      setCheckedNull(false);
+    } else if (value === 'color') {
+      setCheckedStyle(false);
+      setCheckedColor(true);
+      setCheckedNull(false);
+    } else {
+      setCheckedStyle(false);
+      setCheckedColor(false);
+      setCheckedNull(true);
+    }
   };
+  const handleChangeSide = () => {
+    setCheckedLeft(!onLeftSide);
+  };
+
   return (
     <Form
       onFinish={onChange}
@@ -432,17 +475,18 @@ export const FormattingPopoverContent = ({
             label={t('ON ICON')}
             initialValue={onIcon}
           >
-            <CheckboxControl checked={onIcon} />
+            <CheckboxControl checked={onIcon} onChange={setCheckedIcon} />
           </FormItem>
           <FormItem
             name="radioSide"
             id="radioSide"
             label={t('SIDE ICON')}
             initialValue={radioSide}
+            hidden={!onIcon}
           >
             <RadioButtonControl
               options={RadioValueSideIconOptions}
-              onChange={handleChange}
+              onChange={handleChangeSide}
             />
           </FormItem>
           <FormItem
@@ -450,6 +494,7 @@ export const FormattingPopoverContent = ({
             label={t('icon scheme')}
             rules={rulesRequired}
             initialValue={iconSchema[0].value}
+            hidden={!onIcon}
           >
             <Select ariaLabel={t('icon scheme')} options={iconSchema} />
           </FormItem>
@@ -471,6 +516,7 @@ export const FormattingPopoverContent = ({
             id="formatterValue"
             label={t('accept for value')}
             initialValue={formatterValue}
+            hidden={onNull}
           >
             <CheckboxControl checked={formatterValue} />
           </FormItem>
@@ -479,6 +525,7 @@ export const FormattingPopoverContent = ({
             label={t('Color scheme')}
             rules={rulesRequired}
             initialValue={colorScheme[0].value}
+            hidden={onNull ? true : !onColor}
           >
             <Select ariaLabel={t('Color scheme')} options={colorScheme} />
           </FormItem>
@@ -487,10 +534,11 @@ export const FormattingPopoverContent = ({
             label={t('style scheme')}
             rules={rulesRequired}
             initialValue={styleScheme[0].value}
+            hidden={onNull ? true : !onStyle}
           >
             <Select ariaLabel={t('Color scheme')} options={styleScheme} />
           </FormItem>
-          <FormItem name="columnNan" label={t('Column')}>
+          <FormItem name="columnNan" label={t('Column')} hidden={onNull}>
             <Select
               mode="multiple"
               ariaLabel={t('Select column')}

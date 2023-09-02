@@ -155,6 +155,31 @@ function hexToRgb(inputHex: string | undefined): {
   return { r, g, b, a };
 }
 
+function colorToRGBA(
+  color: string | undefined,
+  a: any,
+): {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+} {
+  if (color === undefined) {
+    return { r: 0, g: 0, b: 0, a: 0 };
+  }
+
+  const div = document.createElement('div');
+  div.style.color = color;
+  document.body.appendChild(div);
+  const computedColor = getComputedStyle(div).color;
+  const match = computedColor.match(/\d+/g);
+  const r = match ? parseInt(match[0], 10) : 0; // Проверьте, что match существует
+  const g = match ? parseInt(match[1], 10) : 0;
+  const b = match ? parseInt(match[2], 10) : 0;
+
+  return { r, g, b, a };
+}
+
 /**
  * Cell background color calculation for horizontal bar chart
  */
@@ -636,6 +661,12 @@ export default function TableChart<D extends DataRecord = DataRecord>(
             showValue = !showList.includes(false);
           }
 
+          let colorValue;
+
+          if (isFormatterValue) {
+            colorValue = backgroundColor;
+          }
+
           const StyledCell = styled.td`
             text-align: ${sharedStyle.textAlign};
             white-space: ${value instanceof Date ? 'nowrap' : undefined};
@@ -646,14 +677,15 @@ export default function TableChart<D extends DataRecord = DataRecord>(
               ? !isNumeric
                 ? backgroundColor || columnColor
                 : undefined
-              : backgroundColor || columnColor};
-            color: ${isFormatterValue
-              ? backgroundColor || columnColor
-              : undefined};
+              : columnColor};
+            color: ${isFormatterValue ? colorValue || columnColor : undefined};
             font-size: ${columnFont};
           `;
 
-          const { r, g, b, a } = hexToRgb(backgroundColor);
+          const { r, g, b, a } = backgroundColor
+            ? hexToRgb(backgroundColor)
+            : colorToRGBA(columnColor, 0.5);
+
           const cellBarStyles = css`
             position: absolute;
             height: 100%;
