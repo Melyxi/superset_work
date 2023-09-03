@@ -508,8 +508,8 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         (isMetric || isRawRecords) &&
         getValueRange(key, alignPositiveNegative);
 
-      const isShowBars =
-        config.showCellBars === undefined ? showCellBars : config.showCellBars;
+      // const isShowBars =
+      //   config.showCellBars === undefined ? showCellBars : config.showCellBars;
 
       let className = '';
       if (emitCrossFilters && !isMetric) {
@@ -662,29 +662,25 @@ export default function TableChart<D extends DataRecord = DataRecord>(
           }
 
           let colorValue;
-
+          const { r, g, b, a } = backgroundColor
+            ? hexToRgb(backgroundColor)
+            : colorToRGBA(columnColor, 0.5);
           if (isFormatterValue) {
             colorValue = backgroundColor;
+            backgroundColor = undefined;
+          }
+          if (valueRange) {
+            backgroundColor = undefined;
           }
 
           const StyledCell = styled.td`
             text-align: ${sharedStyle.textAlign};
             white-space: ${value instanceof Date ? 'nowrap' : undefined};
             position: relative;
-            background: ${isFormatterValue
-              ? undefined
-              : isShowBars
-              ? !isNumeric
-                ? backgroundColor || columnColor
-                : undefined
-              : columnColor};
-            color: ${isFormatterValue ? colorValue || columnColor : undefined};
+            background: ${backgroundColor || columnColor};
+            color: ${colorValue || undefined};
             font-size: ${columnFont};
           `;
-
-          const { r, g, b, a } = backgroundColor
-            ? hexToRgb(backgroundColor)
-            : colorToRGBA(columnColor, 0.5);
 
           const cellBarStyles = css`
             position: absolute;
