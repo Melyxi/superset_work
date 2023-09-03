@@ -310,116 +310,11 @@ type FetchTableJson = {
   table_data?: Record<string, any>;
 }[];
 
-type Tables = Omit<
+type Table = Omit<
   TableEditorColumnsProps,
   'addDangerToast' | 'addSuccessToast'
->[];
-
-type TableEditorSliceProps = Slice;
-
-const TableEditorSlice = ({ slice_id }: TableEditorSliceProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [tables, setTables] = useState<Tables>([]);
-  const [activePanels, setActivePanels] = useState<string[]>([]);
-
-  function handleActivePanelChange(panels: string | string[]) {
-    if (typeof panels === 'string') {
-      setActivePanels([panels]);
-    } else {
-      setActivePanels(panels);
-    }
-  }
-
-  const fetchTable = useCallback(
-    async ({
-      sliceId,
-      onSuccess,
-    }: {
-      sliceId: number;
-      onSuccess?: (tables: Tables) => void | Promise<void>;
-    }) => {
-      try {
-        setIsLoading(true);
-        const response = await SupersetClient.get({
-          endpoint: `/editortablesview/editor_table/${sliceId}/`,
-        });
-
-        const newTables: Tables = (
-          (response?.json as FetchTableJson) ?? []
-        ).map(({ id_table, columns, table_data, name, description }) => ({
-          tableId: id_table,
-          name,
-          description,
-          columns: columns.map(({ name, type, description }) => ({
-            name,
-            type,
-            description,
-          })),
-          placeholderData: table_data,
-        }));
-
-        setTables(newTables);
-
-        await onSuccess?.(newTables);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    fetchTable({
-      sliceId: slice_id,
-      onSuccess: newTables => {
-        setActivePanels(newTables.map(({ tableId }) => String(tableId)));
-      },
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slice_id]);
-
-  const handleChangeTable = async () => {
-    await fetchTable({
-      sliceId: slice_id,
-    });
-  };
-
-  return (
-    <div>
-      {isLoading && tables.length === 0 ? (
-        <div css={{ position: 'relative', minHeight: '50px' }}>
-          <Loading />
-        </div>
-      ) : (
-        <Collapse activeKey={activePanels} onChange={handleActivePanelChange}>
-          {tables.map((item, index) => (
-            <Collapse.Panel
-              key={item.tableId}
-              header={
-                item.name || item.description ? (
-                  <Tooltip title={item.name} placement="top">
-                    <Typography.Text>
-                      {item.description || item.name}
-                    </Typography.Text>
-                  </Tooltip>
-                ) : (
-                  <Typography.Text type="secondary">Не задано</Typography.Text>
-                )
-              }
-            >
-              <TableEditorColumns
-                key={index}
-                onChangeTable={handleChangeTable}
-                {...item}
-              />
-            </Collapse.Panel>
-          ))}
-        </Collapse>
-      )}
-    </div>
-  );
+> & {
+  slices: Set<number>;
 };
 
 export interface TableEditorModalProps {
@@ -433,12 +328,9 @@ const TableEditorModal = ({
   show = false,
   onHide = () => {},
 }: TableEditorModalProps) => {
-  const [activePanels, setActivePanels] = useState<string[]>(
-    Object.keys(slices),
-  );
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => setActivePanels(Object.keys(slices)), [slices]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [activePanels, setActivePanels] = useState<string[]>([]);
 
   function handleActivePanelChange(panels: string | string[]) {
     if (typeof panels === 'string') {
@@ -447,6 +339,85 @@ const TableEditorModal = ({
       setActivePanels(panels);
     }
   }
+
+  const fetchTable = useCallback(
+    async ({
+      slices,
+      onSuccess,
+    }: {
+      slices: { [id: number]: Slice };
+      onSuccess?: (tables: Table[]) => void | Promise<void>;
+    }) => {
+      try {
+        setIsLoading(true);
+
+        const slicesVals = Object.values(slices);
+
+        const response = await Promise.all(
+          slicesVals.map(({ slice_id }) =>
+            SupersetClient.get({
+              endpoint: `/editortablesview/editor_table/${slice_id}/`,
+            }),
+          ),
+        );
+
+        const newTables = response.reduce<Table[]>(
+          (result, sliceResponse, currentIndex) => {
+            ((sliceResponse?.json as FetchTableJson) ?? []).forEach(item => {
+              const sliceId = slicesVals[currentIndex].slice_id;
+
+              const index = result.findIndex(
+                ({ tableId }) => tableId === item.id_table,
+              );
+
+              if (index === -1) {
+                result.push({
+                  tableId: item.id_table,
+                  name: item.name,
+                  description: item.description,
+                  columns: item.columns.map(({ name, type, description }) => ({
+                    name,
+                    type,
+                    description,
+                  })),
+                  placeholderData: item.table_data,
+                  slices: new Set([sliceId]),
+                });
+              } else {
+                result[index].slices.add(sliceId);
+              }
+            });
+
+            return result;
+          },
+          [],
+        );
+
+        setTables(newTables);
+
+        await onSuccess?.(newTables);
+      } catch (error) {
+        setTables([]);
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    fetchTable({
+      slices,
+      onSuccess: newTables => {
+        setActivePanels(newTables.map(({ tableId }) => String(tableId)));
+      },
+    });
+  }, [fetchTable, slices]);
+
+  const handleChangeTable = async () => {
+    await fetchTable({ slices });
+  };
 
   return (
     <Modal
@@ -467,24 +438,52 @@ const TableEditorModal = ({
         }
       `}
     >
-      <Collapse activeKey={activePanels} onChange={handleActivePanelChange}>
-        {Object.values(slices).map(slice => (
-          <Collapse.Panel
-            key={slice.slice_id}
-            header={
-              slice.slice_name ? (
-                <Typography.Text strong>{slice.slice_name}</Typography.Text>
-              ) : (
-                <Typography.Text strong type="secondary">
-                  Не задано
-                </Typography.Text>
-              )
-            }
-          >
-            <TableEditorSlice key={slice.slice_id} {...slice} />
-          </Collapse.Panel>
-        ))}
-      </Collapse>
+      {isLoading && tables.length === 0 ? (
+        <div css={{ position: 'relative', minHeight: '50px' }}>
+          <Loading />
+        </div>
+      ) : (
+        <Collapse activeKey={activePanels} onChange={handleActivePanelChange}>
+          {tables.map((item, index) => (
+            <Collapse.Panel
+              key={item.tableId}
+              header={
+                item.name || item.description ? (
+                  <Tooltip
+                    title={
+                      <Typography.Text
+                        css={css`
+                          color: inherit;
+                        `}
+                      >
+                        {item.name} <br />
+                        <br />
+                        Применяется для виджетов: <br />
+                        {Array.from(item.slices)
+                          .map(sliceId => slices[sliceId].slice_name)
+                          .join(', ')}
+                      </Typography.Text>
+                    }
+                    placement="top"
+                  >
+                    <Typography.Text>
+                      {item.description || item.name}
+                    </Typography.Text>
+                  </Tooltip>
+                ) : (
+                  <Typography.Text type="secondary">Не задано</Typography.Text>
+                )
+              }
+            >
+              <TableEditorColumns
+                key={index}
+                onChangeTable={handleChangeTable}
+                {...item}
+              />
+            </Collapse.Panel>
+          ))}
+        </Collapse>
+      )}
     </Modal>
   );
 };
