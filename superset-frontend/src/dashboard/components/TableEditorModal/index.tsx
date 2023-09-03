@@ -12,6 +12,7 @@ import Collapse from 'src/components/Collapse';
 import Icons from 'src/components/Icons';
 import { Slice } from 'src/dashboard/types';
 import { Tooltip } from 'src/components/Tooltip';
+import ChangeColumnsConfirmModal from './ChangeColumnsConfirmModal';
 
 interface ColumnDefinition {
   name: string;
@@ -25,6 +26,7 @@ interface TableEditorColumnsProps {
   description?: string;
   columns: ColumnDefinition[];
   placeholderData?: Record<string, any>;
+  onChangeTable?: () => void | Promise<void>;
   addSuccessToast: (message: string) => void;
   addDangerToast: (message: string) => void;
 }
@@ -64,30 +66,38 @@ const TableEditorColumns = withToasts((props: TableEditorColumnsProps) => {
     tableId,
     columns,
     placeholderData = {},
+    onChangeTable,
     addSuccessToast,
     addDangerToast,
   } = props;
 
   const [form] = AntdForm.useForm();
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const initialValues = useMemo(() => getInitialValues(columns), [columns]);
 
+  const columnsMap = useMemo(
+    () =>
+      columns.reduce<Record<string, ColumnDefinition>>((acc, col) => {
+        acc[col.name] = col;
+        return acc;
+      }, {}),
+    [columns],
+  );
+
   const onFinish = (values: Record<string, any>) => {
     setIsLoading(true);
-
-    const types = columns.reduce<Record<string, string>>((acc, col) => {
-      acc[col.name] = col.type;
-      return acc;
-    }, {});
 
     const data = Object.entries(values).reduce<Record<string, any>>(
       (acc, [key, val]) => {
         acc[key] = val === '' ? null : val;
 
+        const { type } = columnsMap[key];
+
         if (
           acc[key] !== null &&
-          (types[key] === 'INTEGER' || types[key] === 'DOUBLE PRECISION')
+          (type === 'INTEGER' || type === 'DOUBLE PRECISION')
         ) {
           acc[key] = Number(acc[key]);
         }
@@ -104,6 +114,7 @@ const TableEditorColumns = withToasts((props: TableEditorColumnsProps) => {
       .then(
         () => {
           form.resetFields();
+          onChangeTable?.();
           addSuccessToast('Success');
         },
         async response => {
@@ -125,133 +136,163 @@ const TableEditorColumns = withToasts((props: TableEditorColumnsProps) => {
       });
   };
 
+  const touchedValues = Object.entries(
+    form.getFieldsValue(true, ({ touched }) => touched),
+  ).map(([key, value]) => ({
+    ...columnsMap[key],
+    value,
+  }));
+
   return (
-    <TableEditorColumnsRoot>
-      <TableEditorColumnsForm
-        form={form}
-        onFinish={onFinish}
-        layout="vertical"
-        initialValues={initialValues}
-      >
-        <Row
-          gutter={16}
-          css={(theme: SupersetTheme) => css`
-            position: sticky;
-            top: 0;
-            z-index: 1;
-            padding-bottom: 8px;
-            background-color: ${theme.colors.grayscale.light5};
-          `}
+    <>
+      <TableEditorColumnsRoot>
+        <TableEditorColumnsForm
+          form={form}
+          onFinish={onFinish}
+          layout="vertical"
+          initialValues={initialValues}
         >
-          <Col span={5}>
-            <Typography.Text strong>Колонка</Typography.Text>
-          </Col>
-          <Col span={9}>
-            <Typography.Text strong>Предыдущее значение</Typography.Text>
-          </Col>
-          <Col span={1} />
-          <Col span={9}>
-            <Typography.Text strong>Новое значение</Typography.Text>
-          </Col>
-        </Row>
-        {columns.map(({ name, type, description }) => {
-          const inputType = {
-            DATE: 'date',
-            DATETIME: 'datetime-local',
-            TIMESTAMP: 'datetime-local',
-            TIME: 'time',
-          }[type];
+          <Row
+            gutter={16}
+            css={(theme: SupersetTheme) => css`
+              position: sticky;
+              top: 0;
+              z-index: 1;
+              padding-bottom: 8px;
+              background-color: ${theme.colors.grayscale.light5};
+            `}
+          >
+            <Col span={5}>
+              <Typography.Text strong>Колонка</Typography.Text>
+            </Col>
+            <Col span={9}>
+              <Typography.Text strong>Предыдущее значение</Typography.Text>
+            </Col>
+            <Col span={1} />
+            <Col span={9}>
+              <Typography.Text strong>Новое значение</Typography.Text>
+            </Col>
+          </Row>
+          {columns.map(({ name, type, description }) => {
+            const inputType = {
+              DATE: 'date',
+              DATETIME: 'datetime-local',
+              TIMESTAMP: 'datetime-local',
+              TIME: 'time',
+            }[type];
 
-          return (
-            <Row
-              gutter={16}
-              css={css`
-                margin-bottom: 8px;
-              `}
-            >
-              <Col span={5}>
-                <Tooltip title={name} placement="top">
-                  <span>{description || name}</span>
-                </Tooltip>
-              </Col>
-              <Col span={9}>
-                <Input
-                  // type={inputType}
-                  disabled
-                  value={placeholderData[name]}
-                />
-              </Col>
-              <Col span={1}>
-                {['date', 'time', 'datetime-local'].includes(
-                  inputType as string,
-                ) ? (
-                  <Tooltip title="Текущее время" placement="top">
-                    <Button
-                      buttonStyle="link"
-                      onClick={() => {
-                        const dateTimeString = new Date().toISOString();
-                        let value: string;
+            const substringDateTimeValue = (dateTimeString: string) => {
+              switch (inputType) {
+                case 'date':
+                  return dateTimeString.substring(0, 10);
+                case 'time':
+                  return dateTimeString.substring(11, 19);
+                case 'datetime-local':
+                default:
+                  return dateTimeString.substring(0, 19);
+              }
+            };
 
-                        switch (inputType) {
-                          case 'date':
-                            value = dateTimeString.substring(0, 10);
-                            break;
-                          case 'time':
-                            value = dateTimeString.substring(11, 19);
-                            break;
-                          case 'datetime-local':
-                          default:
-                            value = dateTimeString.substring(0, 19);
-                            break;
-                        }
+            const handleDateNowButtonClick = () => {
+              form.setFieldsValue({
+                [name]: substringDateTimeValue(new Date().toISOString()),
+              });
+            };
 
-                        form.setFieldsValue({
-                          [name]: value,
-                        });
-                      }}
-                      css={css`
-                        padding: 0;
-                      `}
-                    >
-                      <Icons.ClockCircleOutlined iconSize="l" />
-                    </Button>
+            const handleCurrentValueButtonClick = () => {
+              form.setFieldsValue({
+                [name]: placeholderData[name],
+              });
+            };
+
+            return (
+              <Row
+                gutter={16}
+                css={css`
+                  margin-bottom: 8px;
+                `}
+              >
+                <Col span={5}>
+                  <Tooltip title={name} placement="top">
+                    <Typography.Text>{description || name}</Typography.Text>
                   </Tooltip>
-                ) : (
-                  <Tooltip title="Test" placement="top">
-                    <Button
-                      buttonStyle="link"
-                      onClick={() => {
-                        form.setFieldsValue({ [name]: placeholderData[name] });
-                      }}
-                      css={css`
-                        padding: 0;
-                      `}
-                    >
-                      <Icons.DoubleRightOutlined iconSize="l" />
-                    </Button>
-                  </Tooltip>
-                )}
-              </Col>
-              <Col span={9}>
-                <StyledFormItem name={name}>
-                  <Input type={inputType} name={name} />
-                </StyledFormItem>
-              </Col>
-            </Row>
-          );
-        })}
-      </TableEditorColumnsForm>
-      <TableEditorColumnsActions>
-        <Button
-          key="submit"
-          buttonStyle="primary"
-          onClick={form.submit}
-          loading={isLoading}
-        >
-          {t('Save')}
-        </Button>
-      </TableEditorColumnsActions>
-    </TableEditorColumnsRoot>
+                </Col>
+                <Col span={9}>
+                  <Input
+                    type={inputType}
+                    disabled
+                    value={
+                      ['date', 'time', 'datetime-local'].includes(
+                        inputType as string,
+                      )
+                        ? substringDateTimeValue(placeholderData[name])
+                        : placeholderData[name]
+                    }
+                  />
+                </Col>
+                <Col span={1}>
+                  {['date', 'time', 'datetime-local'].includes(
+                    inputType as string,
+                  ) ? (
+                    <Tooltip title="Текущее время" placement="top">
+                      <Button
+                        buttonStyle="link"
+                        onClick={handleDateNowButtonClick}
+                        css={css`
+                          padding: 0;
+                        `}
+                      >
+                        <Icons.ClockCircleOutlined iconSize="l" />
+                      </Button>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title="Test" placement="top">
+                      <Button
+                        buttonStyle="link"
+                        onClick={handleCurrentValueButtonClick}
+                        css={css`
+                          padding: 0;
+                        `}
+                      >
+                        <Icons.DoubleRightOutlined iconSize="l" />
+                      </Button>
+                    </Tooltip>
+                  )}
+                </Col>
+                <Col span={9}>
+                  <StyledFormItem name={name}>
+                    <Input autoComplete="off" type={inputType} name={name} />
+                  </StyledFormItem>
+                </Col>
+              </Row>
+            );
+          })}
+        </TableEditorColumnsForm>
+        <TableEditorColumnsActions>
+          <Button
+            key="submit"
+            buttonStyle="primary"
+            onClick={() => {
+              setIsConfirmModalOpen(true);
+            }}
+            loading={isLoading}
+          >
+            {t('Save')}
+          </Button>
+        </TableEditorColumnsActions>
+      </TableEditorColumnsRoot>
+      <ChangeColumnsConfirmModal
+        show={isConfirmModalOpen}
+        onConfirm={() => {
+          setIsConfirmModalOpen(false);
+          form.submit();
+        }}
+        onCancel={() => {
+          setIsConfirmModalOpen(false);
+        }}
+        columns={touchedValues}
+      />
+    </>
   );
 });
 
@@ -269,23 +310,17 @@ type FetchTableJson = {
   table_data?: Record<string, any>;
 }[];
 
+type Tables = Omit<
+  TableEditorColumnsProps,
+  'addDangerToast' | 'addSuccessToast'
+>[];
+
 type TableEditorSliceProps = Slice;
 
 const TableEditorSlice = ({ slice_id }: TableEditorSliceProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [tables, setTables] = useState<
-    Omit<TableEditorColumnsProps, 'addDangerToast' | 'addSuccessToast'>[]
-  >([]);
-
-  const getDefaultActivePanel = () =>
-    tables.map(({ tableId }) => String(tableId));
-
-  const [activePanels, setActivePanels] = useState<string[]>(
-    getDefaultActivePanel,
-  );
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => setActivePanels(getDefaultActivePanel()), [tables]);
+  const [tables, setTables] = useState<Tables>([]);
+  const [activePanels, setActivePanels] = useState<string[]>([]);
 
   function handleActivePanelChange(panels: string | string[]) {
     if (typeof panels === 'string') {
@@ -295,48 +330,70 @@ const TableEditorSlice = ({ slice_id }: TableEditorSliceProps) => {
     }
   }
 
-  const fetchTable = useCallback(() => {
-    setIsLoading(true);
-    SupersetClient.get({
-      endpoint: `/editortablesview/editor_table/${slice_id}/`,
-    })
-      .then(response => {
-        setTables(
-          ((response?.json as FetchTableJson) ?? []).map(
-            ({ id_table, columns, table_data, name, description }) => ({
-              tableId: id_table,
-              name,
-              description,
-              columns: columns.map(({ name, type, description }) => ({
-                name,
-                type,
-                description,
-              })),
-              placeholderData: table_data,
-            }),
-          ),
-        );
-      })
-      .finally(() => {
+  const fetchTable = useCallback(
+    async ({
+      sliceId,
+      onSuccess,
+    }: {
+      sliceId: number;
+      onSuccess?: (tables: Tables) => void | Promise<void>;
+    }) => {
+      try {
+        setIsLoading(true);
+        const response = await SupersetClient.get({
+          endpoint: `/editortablesview/editor_table/${sliceId}/`,
+        });
+
+        const newTables: Tables = (
+          (response?.json as FetchTableJson) ?? []
+        ).map(({ id_table, columns, table_data, name, description }) => ({
+          tableId: id_table,
+          name,
+          description,
+          columns: columns.map(({ name, type, description }) => ({
+            name,
+            type,
+            description,
+          })),
+          placeholderData: table_data,
+        }));
+
+        setTables(newTables);
+
+        await onSuccess?.(newTables);
+      } catch (error) {
+        console.log(error);
+      } finally {
         setIsLoading(false);
-      });
-  }, [slice_id]);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    fetchTable();
-  }, [fetchTable]);
+    fetchTable({
+      sliceId: slice_id,
+      onSuccess: newTables => {
+        setActivePanels(newTables.map(({ tableId }) => String(tableId)));
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slice_id]);
+
+  const handleChangeTable = async () => {
+    await fetchTable({
+      sliceId: slice_id,
+    });
+  };
 
   return (
     <div>
-      {isLoading ? (
+      {isLoading && tables.length === 0 ? (
         <div css={{ position: 'relative', minHeight: '50px' }}>
           <Loading />
         </div>
       ) : (
-        <Collapse
-          defaultActiveKey={activePanels}
-          onChange={handleActivePanelChange}
-        >
+        <Collapse activeKey={activePanels} onChange={handleActivePanelChange}>
           {tables.map((item, index) => (
             <Collapse.Panel
               key={item.tableId}
@@ -352,7 +409,11 @@ const TableEditorSlice = ({ slice_id }: TableEditorSliceProps) => {
                 )
               }
             >
-              <TableEditorColumns key={index} {...item} />
+              <TableEditorColumns
+                key={index}
+                onChangeTable={handleChangeTable}
+                {...item}
+              />
             </Collapse.Panel>
           ))}
         </Collapse>
@@ -395,6 +456,7 @@ const TableEditorModal = ({
       centered
       responsive
       footer={false}
+      hideFooter
       css={css`
         .ant-modal-body {
           display: flex;
@@ -405,10 +467,7 @@ const TableEditorModal = ({
         }
       `}
     >
-      <Collapse
-        defaultActiveKey={activePanels}
-        onChange={handleActivePanelChange}
-      >
+      <Collapse activeKey={activePanels} onChange={handleActivePanelChange}>
         {Object.values(slices).map(slice => (
           <Collapse.Panel
             key={slice.slice_id}
