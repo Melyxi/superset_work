@@ -16,12 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import componentIsResizable from './componentIsResizable';
-import shouldWrapChildInRow from './shouldWrapChildInRow';
 import newComponentFactory from './newComponentFactory';
-import getComponentWidthFromDrop from './getComponentWidthFromDrop';
 
-import { ROW_TYPE, TABS_TYPE, TAB_TYPE } from './componentTypes';
+import { TABS_TYPE, TAB_TYPE } from './componentTypes';
 import { componentLayoutLookup } from '../components/gridComponents';
 
 export default function newEntitiesFromDrop({ dropResult, layout }) {
@@ -29,8 +26,7 @@ export default function newEntitiesFromDrop({ dropResult, layout }) {
 
   const dragType = dragging.type;
   const dropEntity = layout[destination.id];
-  const dropType = dropEntity.type;
-  let newDropChild = newComponentFactory(dragType, dragging.meta);
+  const newDropChild = newComponentFactory(dragType, dragging.meta);
   newDropChild.parents = (dropEntity.parents || []).concat(dropEntity.id);
 
   const newEntities = {

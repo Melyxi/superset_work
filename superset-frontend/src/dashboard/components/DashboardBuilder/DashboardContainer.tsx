@@ -31,6 +31,7 @@ import {
 } from '@superset-ui/core';
 import { ParentSize } from '@visx/responsive';
 import pick from 'lodash/pick';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { ReactFlowProvider } from 'reactflow';
 import Tabs from 'src/components/Tabs';
 import DashboardGrid from 'src/dashboard/containers/DashboardGrid';
@@ -247,6 +248,7 @@ const DashboardContainer: FC<DashboardContainerProps> = ({ topLevelTabs }) => {
               >
                 <ReactFlowProvider>
                   <DashboardGrid
+                    // @ts-ignore
                     id={id}
                     gridComponent={dashboardLayout[id]}
                     // see isValidChild for why tabs do not increment the depth of their children

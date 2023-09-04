@@ -76,10 +76,13 @@ export function recursivelyDeleteChildren(
         };
       }
 
-      const componentLayoutIndex = (parent.meta?.layout ?? []).indexOf(componentId);
+      const componentLayoutIndex = (parent.meta?.layout ?? []).indexOf(
+        componentId,
+      );
       if (componentLayoutIndex > -1) {
         const nextLayout = [...parent.meta.layout];
         nextLayout.splice(componentIndex, 1);
+        // eslint-disable-next-line no-param-reassign
         nextComponents[componentParentId] = {
           ...parent,
           meta: {
@@ -234,17 +237,14 @@ const actionHandlers = {
           meta: {
             ...topLevelComponent.meta,
             layout: [],
-          }
+          },
         },
         [draggingTabId]: {
           ...draggingTab,
           children: [...draggingTab.children, ...childrenToMove],
           meta: {
             ...draggingTab.meta,
-            layout: [
-              ...(draggingTab.meta.layout ?? []),
-              ...layoutToMove,
-            ],
+            layout: [...(draggingTab.meta.layout ?? []), ...layoutToMove],
           },
         },
       };

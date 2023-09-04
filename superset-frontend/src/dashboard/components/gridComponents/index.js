@@ -101,10 +101,7 @@ export const componentLayoutLookup = {
     height: 1,
     minWidth: 50,
     minHeight: 1,
-    resizeControls: [
-      'left',
-      'right',
-    ],
+    resizeControls: ['left', 'right'],
     toolbar: true,
   },
   [HEADER_TYPE]: {

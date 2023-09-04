@@ -27,6 +27,7 @@ import {
   NativeFiltersState,
 } from '@superset-ui/core';
 import { Dataset } from '@superset-ui/chart-controls';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { Node } from 'reactflow';
 import { chart } from 'src/components/Chart/chartReducer';
 import componentTypes from 'src/dashboard/util/componentTypes';

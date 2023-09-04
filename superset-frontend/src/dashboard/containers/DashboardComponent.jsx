@@ -1,3 +1,4 @@
+/* eslint-disable import/no-extraneous-dependencies */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -29,7 +30,10 @@ import {
 } from 'reactflow';
 import { logEvent } from 'src/logger/actions';
 import { addDangerToast } from 'src/components/MessageToasts/actions';
-import { componentLayoutLookup, componentLookup } from 'src/dashboard/components/gridComponents';
+import {
+  componentLayoutLookup,
+  componentLookup,
+} from 'src/dashboard/components/gridComponents';
 import getDetailedComponentWidth from 'src/dashboard/util/getDetailedComponentWidth';
 import { getActiveFilters } from 'src/dashboard/util/activeDashboardFilters';
 import { componentShape } from 'src/dashboard/util/propShapes';
@@ -130,9 +134,11 @@ function mapDispatchToProps(dispatch) {
   );
 }
 
-const DashboardComponent = (props) => {
+const DashboardComponent = props => {
   const { id, component } = props;
-  const componentState = useReactflowStore((state) => state.nodeInternals.get(id));
+  const componentState = useReactflowStore(state =>
+    state.nodeInternals.get(id),
+  );
   const { deleteElements } = useReactFlow();
 
   const handleDeleteComponent = useCallback(() => {
@@ -141,35 +147,37 @@ const DashboardComponent = (props) => {
 
   const Component = component ? componentLookup[component.type] : null;
   const layoutConfig = component ? componentLayoutLookup[component.type] : null;
-  const element = Component
-    ? (
-      <Component
-        size={component.type === CHART_TYPE || component.type === MARKDOWN_TYPE ? {
-          width: componentState?.width,
-          height: componentState?.height,
-        } : undefined}
-        {...props}
-      />
-    )
-    : null;
+  const element = Component ? (
+    <Component
+      size={
+        component.type === CHART_TYPE || component.type === MARKDOWN_TYPE
+          ? {
+              width: componentState?.width,
+              height: componentState?.height,
+            }
+          : undefined
+      }
+      {...props}
+    />
+  ) : null;
 
   if (props.editMode) {
     return (
       <>
         {element}
-        {layoutConfig ? layoutConfig.resizeControls.map((c) => (
-          <NodeResizeControl
-            key={c}
-            position={c}
-            minWidth={layoutConfig.minWidth}
-            minHeight={layoutConfig.minHeight}
-          />
-        )) : null}
+        {layoutConfig
+          ? layoutConfig.resizeControls.map(c => (
+              <NodeResizeControl
+                key={c}
+                position={c}
+                minWidth={layoutConfig.minWidth}
+                minHeight={layoutConfig.minHeight}
+              />
+            ))
+          : null}
         {layoutConfig?.toolbar ? (
           <NodeToolbar position={Position.Left}>
-            <DeleteComponentButton
-              onDelete={handleDeleteComponent}
-            />
+            <DeleteComponentButton onDelete={handleDeleteComponent} />
           </NodeToolbar>
         ) : null}
       </>
@@ -177,7 +185,7 @@ const DashboardComponent = (props) => {
   }
 
   return element;
-}
+};
 
 DashboardComponent.propTypes = propTypes;
 DashboardComponent.defaultProps = defaultProps;

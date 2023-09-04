@@ -23,10 +23,8 @@ import Tabs from 'src/components/Tabs';
 import { t, css, SupersetTheme } from '@superset-ui/core';
 import SliceAdder from 'src/dashboard/containers/SliceAdder';
 import dashboardComponents from 'src/visualizations/presets/dashboardComponents';
-import NewColumn from '../gridComponents/new/NewColumn';
 import NewDivider from '../gridComponents/new/NewDivider';
 import NewHeader from '../gridComponents/new/NewHeader';
-import NewRow from '../gridComponents/new/NewRow';
 import NewTabs from '../gridComponents/new/NewTabs';
 import NewMarkdown from '../gridComponents/new/NewMarkdown';
 import NewDynamicComponent from '../gridComponents/new/NewDynamicComponent';
@@ -80,8 +78,8 @@ const BuilderComponentPane = ({ topOffset = 0 }) => (
         </Tabs.TabPane>
         <Tabs.TabPane key={2} tab={t('Layout elements')}>
           <NewTabs />
-          {/* <NewRow />
-          <NewColumn /> */}
+          {/* <NewRow /> */}
+          {/* <NewColumn /> */}
           <NewHeader />
           <NewMarkdown />
           <NewDivider />
