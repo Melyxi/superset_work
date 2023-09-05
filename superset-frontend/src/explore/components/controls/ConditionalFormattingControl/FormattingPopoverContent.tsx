@@ -209,7 +209,6 @@ export const RadioValueFormatOptions: [
   JsonValue,
   Exclude<ReactNode, null | undefined | boolean>,
 ][] = [
-  [null, t('None')],
   [RadioValueFormat.Color, t('Color')],
   [RadioValueFormat.Style, t('Style')],
 ];
@@ -388,7 +387,6 @@ const setRadioFormat = (config?: ConditionalFormattingConfig) => {
 
   let isStyle = false;
   let isColor = true;
-  let isNull = false;
   if (radioFormat !== undefined) {
     if (radioFormat !== null) {
       if (radioFormat === 'style') {
@@ -396,12 +394,11 @@ const setRadioFormat = (config?: ConditionalFormattingConfig) => {
         isColor = false;
       }
     } else {
-      isNull = true;
       isStyle = false;
       isColor = false;
     }
   }
-  return { isStyle, isColor, isNull };
+  return { isStyle, isColor };
 };
 
 export const FormattingPopoverContent = ({
@@ -415,18 +412,18 @@ export const FormattingPopoverContent = ({
   columns: { label: string; value: string }[];
   columnNan: { label: string; value: string }[];
 }) => {
-  const { isStyle, isColor, isNull } = setRadioFormat(config);
+  const { isStyle, isColor } = setRadioFormat(config);
   const theme = useTheme();
   const colorScheme = colorSchemeOptions(theme);
   const styleScheme = styleSchemeOptions(theme);
   const iconSchema = styleIconOptions(theme);
-  const formatterValue = false;
-  const radioFormat = RadioValueFormatOptions[1][0];
+  const [formatterValue, setFormatterValue] = React.useState(false);
+  const graduallyValue = false;
+  const radioFormat = RadioValueFormatOptions[0][0];
   const radioSide = RadioValueSideIconOptions[0][0];
 
   const [onStyle, setCheckedStyle] = React.useState(isStyle);
   const [onColor, setCheckedColor] = React.useState(isColor);
-  const [onNull, setCheckedNull] = React.useState(isNull);
   const [onIcon, setCheckedIcon] = React.useState(
     config ? config.onIcon : false,
   );
@@ -437,19 +434,19 @@ export const FormattingPopoverContent = ({
     if (value === 'style') {
       setCheckedStyle(true);
       setCheckedColor(false);
-      setCheckedNull(false);
     } else if (value === 'color') {
       setCheckedStyle(false);
       setCheckedColor(true);
-      setCheckedNull(false);
     } else {
       setCheckedStyle(false);
       setCheckedColor(false);
-      setCheckedNull(true);
     }
   };
   const handleChangeSide = () => {
     setCheckedLeft(!onLeftSide);
+  };
+  const handleChangeFormatterValue = () => {
+    setFormatterValue(!formatterValue);
   };
 
   return (
@@ -516,16 +513,29 @@ export const FormattingPopoverContent = ({
             id="formatterValue"
             label={t('accept for value')}
             initialValue={formatterValue}
-            hidden={onNull}
           >
-            <CheckboxControl checked={formatterValue} />
+            <CheckboxControl onChange={handleChangeFormatterValue} />
+          </FormItem>
+
+          <div style={{ visibility: formatterValue ? 'visible' : 'hidden' }}>
+            Внимание!!
+          </div>
+
+          <FormItem
+            name="graduallyValue"
+            id="graduallyValue"
+            label={t('accept for gradually Value')}
+            initialValue={graduallyValue}
+            hidden={!onColor}
+          >
+            <CheckboxControl checked={graduallyValue} />
           </FormItem>
           <FormItem
             name="colorScheme"
             label={t('Color scheme')}
             rules={rulesRequired}
             initialValue={colorScheme[0].value}
-            hidden={onNull ? true : !onColor}
+            hidden={!onColor}
           >
             <Select ariaLabel={t('Color scheme')} options={colorScheme} />
           </FormItem>
@@ -534,11 +544,11 @@ export const FormattingPopoverContent = ({
             label={t('style scheme')}
             rules={rulesRequired}
             initialValue={styleScheme[0].value}
-            hidden={onNull ? true : !onStyle}
+            hidden={!onStyle}
           >
             <Select ariaLabel={t('Color scheme')} options={styleScheme} />
           </FormItem>
-          <FormItem name="columnNan" label={t('Column')} hidden={onNull}>
+          <FormItem name="columnNan" label={t('Column')}>
             <Select
               mode="multiple"
               ariaLabel={t('Select column')}

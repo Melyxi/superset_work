@@ -453,6 +453,7 @@ export type ConditionalFormattingConfig = {
   columnNan?: [];
   showValue?: boolean | undefined;
   formatterValue?: boolean | undefined;
+  graduallyValue?: boolean | undefined;
 };
 
 export type ColorFormatters = {
@@ -467,6 +468,8 @@ export type ColorFormatters = {
   getNanFieldValue: (value: number) => any;
   getShowValue: (value: number) => any;
   getFormatterValue: (value: number) => any;
+  getGraduallyValue: (value: number) => any;
+  getColorTextValue: (value: number) => string | undefined;
 }[];
 
 export default {};

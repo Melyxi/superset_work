@@ -70,20 +70,23 @@ export const getOpacity = (
     ),
   );
 };
-
-export const getColorFunction = (
+export const getColorTextValueFunction = (
   {
     operator,
     targetValue,
     targetValueLeft,
     targetValueRight,
     colorScheme,
+    formatterValue,
+    graduallyValue,
   }: ConditionalFormattingConfig,
   columnValues: number[],
   alpha?: boolean,
 ) => {
   let minOpacity = MIN_OPACITY_BOUNDED;
   const maxOpacity = MAX_OPACITY;
+  console.log('graduallyValue', graduallyValue);
+  console.log('formatterValue', formatterValue);
 
   let comparatorFunction: (
     value: number,
@@ -190,19 +193,166 @@ export const getColorFunction = (
       comparatorFunction = () => false;
       break;
   }
+  if (formatterValue) {
+    return (value: number) => {
+      const compareResult = comparatorFunction(value, columnValues);
+      if (compareResult === false) return undefined;
+      const { cutoffValue, extremeValue } = compareResult;
 
-  return (value: number) => {
-    const compareResult = comparatorFunction(value, columnValues);
-    if (compareResult === false) return undefined;
-    const { cutoffValue, extremeValue } = compareResult;
-    if (alpha === undefined || alpha) {
-      return addAlpha(
-        colorScheme,
-        getOpacity(value, cutoffValue, extremeValue, minOpacity, maxOpacity),
-      );
-    }
-    return colorScheme;
-  };
+      if (!graduallyValue) {
+        return addAlpha(colorScheme, 1);
+      }
+      if (alpha === undefined || alpha) {
+        return addAlpha(
+          colorScheme,
+          getOpacity(value, cutoffValue, extremeValue, minOpacity, maxOpacity),
+        );
+      }
+      return colorScheme;
+    };
+  }
+  return () => undefined;
+};
+
+export const getColorFunction = (
+  {
+    operator,
+    targetValue,
+    targetValueLeft,
+    targetValueRight,
+    colorScheme,
+    formatterValue,
+    graduallyValue,
+  }: ConditionalFormattingConfig,
+  columnValues: number[],
+  alpha?: boolean,
+) => {
+  let minOpacity = MIN_OPACITY_BOUNDED;
+  const maxOpacity = MAX_OPACITY;
+  let comparatorFunction: (
+    value: number,
+    allValues: number[],
+  ) => false | { cutoffValue: number; extremeValue: number };
+  if (operator === undefined || colorScheme === undefined) {
+    return () => undefined;
+  }
+  if (
+    MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    (targetValueLeft === undefined || targetValueRight === undefined)
+  ) {
+    return () => undefined;
+  }
+  if (
+    operator !== COMPARATOR.NONE &&
+    !MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    targetValue === undefined
+  ) {
+    return () => undefined;
+  }
+  switch (operator) {
+    case COMPARATOR.NONE:
+      minOpacity = MIN_OPACITY_UNBOUNDED;
+      comparatorFunction = (value: number, allValues: number[]) => {
+        const cutoffValue = Math.min(...allValues);
+        const extremeValue = Math.max(...allValues);
+        return value >= cutoffValue && value <= extremeValue
+          ? { cutoffValue, extremeValue }
+          : false;
+      };
+      break;
+    case COMPARATOR.GREATER_THAN:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value > targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.max(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.LESS_THAN:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value < targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.min(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.GREATER_OR_EQUAL:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value >= targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.max(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.LESS_OR_EQUAL:
+      comparatorFunction = (value: number, allValues: number[]) =>
+        value <= targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: Math.min(...allValues) }
+          : false;
+      break;
+    case COMPARATOR.EQUAL:
+      comparatorFunction = (value: number) =>
+        value === targetValue!
+          ? { cutoffValue: targetValue!, extremeValue: targetValue! }
+          : false;
+      break;
+    case COMPARATOR.NOT_EQUAL:
+      comparatorFunction = (value: number, allValues: number[]) => {
+        if (value === targetValue!) {
+          return false;
+        }
+        const max = Math.max(...allValues);
+        const min = Math.min(...allValues);
+        return {
+          cutoffValue: targetValue!,
+          extremeValue:
+            Math.abs(targetValue! - min) > Math.abs(max - targetValue!)
+              ? min
+              : max,
+        };
+      };
+      break;
+    case COMPARATOR.BETWEEN:
+      comparatorFunction = (value: number) =>
+        value > targetValueLeft! && value < targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    case COMPARATOR.BETWEEN_OR_EQUAL:
+      comparatorFunction = (value: number) =>
+        value >= targetValueLeft! && value <= targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    case COMPARATOR.BETWEEN_OR_LEFT_EQUAL:
+      comparatorFunction = (value: number) =>
+        value >= targetValueLeft! && value < targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    case COMPARATOR.BETWEEN_OR_RIGHT_EQUAL:
+      comparatorFunction = (value: number) =>
+        value > targetValueLeft! && value <= targetValueRight!
+          ? { cutoffValue: targetValueLeft!, extremeValue: targetValueRight! }
+          : false;
+      break;
+    default:
+      comparatorFunction = () => false;
+      break;
+  }
+  if (!formatterValue) {
+    return (value: number) => {
+      const compareResult = comparatorFunction(value, columnValues);
+      if (compareResult === false) return undefined;
+      const { cutoffValue, extremeValue } = compareResult;
+
+      if (!graduallyValue) {
+        return addAlpha(colorScheme, 1);
+      }
+      if (alpha === undefined || alpha) {
+        return addAlpha(
+          colorScheme,
+          getOpacity(value, cutoffValue, extremeValue, minOpacity, maxOpacity),
+        );
+      }
+      return colorScheme;
+    };
+  }
+  return () => undefined;
 };
 
 export const getNanFieldValueFunction = (
@@ -213,7 +363,6 @@ export const getNanFieldValueFunction = (
     targetValueRight,
     colorScheme,
     styleScheme,
-    radioSide,
     columnNan,
   }: ConditionalFormattingConfig,
   columnValues: number[],
@@ -263,7 +412,6 @@ export const getFormatterValueFunction = (
     targetValueRight,
     colorScheme,
     styleScheme,
-    showValue,
     formatterValue,
   }: ConditionalFormattingConfig,
   columnValues: number[],
@@ -304,6 +452,51 @@ export const getFormatterValueFunction = (
     if (compareResult === false) return undefined;
 
     return formatterValue;
+  };
+};
+
+export const getGraduallyValueFunction = (
+  {
+    operator,
+    targetValue,
+    targetValueLeft,
+    targetValueRight,
+    graduallyValue,
+  }: ConditionalFormattingConfig,
+  columnValues: number[],
+) => {
+  const minOpacity = MIN_OPACITY_BOUNDED;
+  if (operator === undefined) {
+    return () => undefined;
+  }
+
+  if (
+    MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    (targetValueLeft === undefined || targetValueRight === undefined)
+  ) {
+    return () => undefined;
+  }
+  if (
+    operator !== COMPARATOR.NONE &&
+    !MULTIPLE_VALUE_COMPARATORS.includes(operator) &&
+    targetValue === undefined
+  ) {
+    return () => undefined;
+  }
+
+  return (value: number) => {
+    const compareResult = getComparator(
+      value,
+      columnValues,
+      operator,
+      targetValue,
+      targetValueLeft,
+      targetValueRight,
+      minOpacity,
+    );
+    if (compareResult === false) return undefined;
+
+    return graduallyValue;
   };
 };
 
@@ -374,6 +567,7 @@ export const getColorFormatters = memoizeOne(
                   config?.targetValueRight !== undefined
                 : config?.targetValue !== undefined)))
         ) {
+          // @ts-ignore
           acc.push({
             column: config?.column,
             getStyleFromValue: getStyleFunction(
@@ -413,6 +607,14 @@ export const getColorFormatters = memoizeOne(
               data.map(row => row[config.column!] as number),
             ),
             getFormatterValue: getFormatterValueFunction(
+              config,
+              data.map(row => row[config.column!] as number),
+            ),
+            getGraduallyValue: getGraduallyValueFunction(
+              config,
+              data.map(row => row[config.column!] as number),
+            ),
+            getColorTextValue: getColorTextValueFunction(
               config,
               data.map(row => row[config.column!] as number),
             ),

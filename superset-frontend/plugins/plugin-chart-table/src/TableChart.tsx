@@ -155,30 +155,30 @@ function hexToRgb(inputHex: string | undefined): {
   return { r, g, b, a };
 }
 
-function colorToRGBA(
-  color: string | undefined,
-  a: any,
-): {
-  r: number;
-  g: number;
-  b: number;
-  a: number;
-} {
-  if (color === undefined) {
-    return { r: 0, g: 0, b: 0, a: 0 };
-  }
-
-  const div = document.createElement('div');
-  div.style.color = color;
-  document.body.appendChild(div);
-  const computedColor = getComputedStyle(div).color;
-  const match = computedColor.match(/\d+/g);
-  const r = match ? parseInt(match[0], 10) : 0; // Проверьте, что match существует
-  const g = match ? parseInt(match[1], 10) : 0;
-  const b = match ? parseInt(match[2], 10) : 0;
-
-  return { r, g, b, a };
-}
+// function colorToRGBA(
+//   color: string | undefined,
+//   a: any,
+// ): {
+//   r: number;
+//   g: number;
+//   b: number;
+//   a: number;
+// } {
+//   if (color === undefined) {
+//     return { r: 0, g: 0, b: 0, a: 0 };
+//   }
+//
+//   const div = document.createElement('div');
+//   div.style.color = color;
+//   document.body.appendChild(div);
+//   const computedColor = getComputedStyle(div).color;
+//   const match = computedColor.match(/\d+/g);
+//   const r = match ? parseInt(match[0], 10) : 0; // Проверьте, что match существует
+//   const g = match ? parseInt(match[1], 10) : 0;
+//   const b = match ? parseInt(match[2], 10) : 0;
+//
+//   return { r, g, b, a };
+// }
 
 /**
  * Cell background color calculation for horizontal bar chart
@@ -527,21 +527,23 @@ export default function TableChart<D extends DataRecord = DataRecord>(
           const html = isHtml ? { __html: text } : undefined;
 
           let backgroundColor;
-          let isFormatterValue;
+          // let isFormatterValue;
           let iconAdd;
           let sideIcon;
           let classStyle;
           let showValue;
+          let colorValue;
 
           const showList: boolean[] = [];
           if (hasColumnColorFormatters) {
             columnColorFormatters!
               .filter(formatter => formatter.column === column.key)
               .forEach(formatter => {
-                isFormatterValue = formatter.getFormatterValue(value as number);
+                // isFormatterValue = formatter.getFormatterValue(value as number);
                 const formatterResult = formatter.getColorFromValue(
                   value as number,
                 );
+                colorValue = formatter.getColorTextValue(value as number);
                 const styleFormatterResult = formatter.getStyleFromValue(
                   value as number,
                 );
@@ -610,7 +612,10 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                           formatter.getStyleFromValue(valueNan as number);
                         const onIconFormatterResult =
                           formatter.getOnIconFromValue(valueNan as number);
-                        isFormatterValue = formatter.getFormatterValue(
+                        // isFormatterValue = formatter.getFormatterValue(
+                        //   valueNan as number,
+                        // );
+                        colorValue = formatter.getColorTextValue(
                           valueNan as number,
                         );
                         const radioFormatResult =
@@ -661,14 +666,8 @@ export default function TableChart<D extends DataRecord = DataRecord>(
             showValue = !showList.includes(false);
           }
 
-          let colorValue;
-          const { r, g, b, a } = backgroundColor
-            ? hexToRgb(backgroundColor)
-            : colorToRGBA(columnColor, 0.5);
-          if (isFormatterValue) {
-            colorValue = backgroundColor;
-            backgroundColor = undefined;
-          }
+          const { r, g, b, a } = hexToRgb(backgroundColor);
+
           if (valueRange) {
             backgroundColor = undefined;
           }
@@ -761,22 +760,6 @@ export default function TableChart<D extends DataRecord = DataRecord>(
           }
           // If cellProps renders textContent already, then we don't have to
           // render `Cell`. This saves some time for large tables.
-          if (sideIcon === 'right') {
-            return (
-              <StyledCell {...cellProps}>
-                {showValue ? text : ''}
-                {iconAdd}
-              </StyledCell>
-            );
-          }
-          if (sideIcon === 'left') {
-            return (
-              <StyledCell {...cellProps}>
-                {iconAdd} {showValue ? text : ''}
-              </StyledCell>
-            );
-          }
-
           return (
             <StyledCell {...cellProps}>
               {valueRange && (
@@ -794,10 +777,14 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                   className="dt-truncate-cell"
                   style={columnWidth ? { width: columnWidth } : undefined}
                 >
-                  {showValue ? text : ''}
+                  {sideIcon === 'left' ? iconAdd : ''}
+                  {showValue ? text : ''} {sideIcon === 'right' ? iconAdd : ''}
                 </div>
               ) : (
-                text
+                <div style={columnWidth ? { width: columnWidth } : undefined}>
+                  {sideIcon === 'left' ? iconAdd : ''}
+                  {showValue ? text : ''} {sideIcon === 'right' ? iconAdd : ''}
+                </div>
               )}
             </StyledCell>
           );
