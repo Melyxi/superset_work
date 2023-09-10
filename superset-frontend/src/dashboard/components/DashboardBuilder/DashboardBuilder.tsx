@@ -353,7 +353,7 @@ const StyledDashboardContent = styled.div<{
   editMode: boolean;
   marginLeft: number;
 }>`
-  ${({ theme, editMode, marginLeft }) => css`
+  ${({ theme, marginLeft }) => css`
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -376,15 +376,8 @@ const StyledDashboardContent = styled.div<{
       margin-bottom: ${theme.gridUnit * 6}px;
       margin-left: ${marginLeft}px;
 
-      ${editMode &&
-      `
-      max-width: calc(100% - ${
-        BUILDER_SIDEPANEL_WIDTH + theme.gridUnit * 16
-      }px);
-    `}
-
       /* this is the ParentSize wrapper */
-    & > div:first-child {
+      & > div:first-child {
         height: inherit !important;
       }
     }
@@ -774,7 +767,7 @@ const DashboardBuilder: FC<DashboardBuilderProps> = () => {
             ) : (
               <Loading />
             )}
-            {editMode && <BuilderComponentPane topOffset={barTopOffset} />}
+            {editMode && <BuilderComponentPane />}
           </StyledDashboardContent>
         </DashboardContentWrapper>
       </StyledContent>
