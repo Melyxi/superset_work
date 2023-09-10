@@ -190,6 +190,8 @@ const StyledContent = styled.div<{
 
 const DashboardContentWrapper = styled.div`
   ${({ theme }) => css`
+    ${reactFlowStyles}
+
     &.dashboard {
       position: relative;
       flex-grow: 1;
@@ -304,8 +306,6 @@ const DashboardContentWrapper = styled.div`
           z-index: 2;
         }
       }
-
-      ${reactFlowStyles}
 
       .react-flow__node.selected,
       .react-flow__node:hover,
