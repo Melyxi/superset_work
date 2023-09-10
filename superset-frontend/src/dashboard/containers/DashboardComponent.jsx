@@ -17,17 +17,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React, { useCallback } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import {
-  NodeResizeControl,
-  useStore as useReactflowStore,
-  useReactFlow,
-  NodeToolbar,
-  Position,
-} from 'reactflow';
+import { NodeResizeControl, useStore as useReactflowStore } from 'reactflow';
 import { logEvent } from 'src/logger/actions';
 import { addDangerToast } from 'src/components/MessageToasts/actions';
 import {
@@ -54,7 +48,6 @@ import {
   setActiveTabs,
   setFullSizeChartId,
 } from 'src/dashboard/actions/dashboardState';
-import DeleteComponentButton from '../components/DeleteComponentButton';
 
 const propTypes = {
   id: PropTypes.string,
@@ -139,11 +132,6 @@ const DashboardComponent = props => {
   const componentState = useReactflowStore(state =>
     state.nodeInternals.get(id),
   );
-  const { deleteElements } = useReactFlow();
-
-  const handleDeleteComponent = useCallback(() => {
-    deleteElements({ nodes: [{ id }] });
-  }, [deleteElements, id]);
 
   const Component = component ? componentLookup[component.type] : null;
   const layoutConfig = component ? componentLayoutLookup[component.type] : null;
@@ -175,11 +163,6 @@ const DashboardComponent = props => {
               />
             ))
           : null}
-        {layoutConfig?.toolbar ? (
-          <NodeToolbar position={Position.Left}>
-            <DeleteComponentButton onDelete={handleDeleteComponent} />
-          </NodeToolbar>
-        ) : null}
       </>
     );
   }

@@ -18,6 +18,8 @@
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ResizeCallback, ResizeStartCallback } from 're-resizable';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { useReactFlow } from 'reactflow';
 import cx from 'classnames';
 import { useSelector } from 'react-redux';
 import { css } from '@superset-ui/core';
@@ -26,6 +28,8 @@ import AnchorLink from 'src/dashboard/components/AnchorLink';
 import Chart from 'src/dashboard/containers/Chart';
 import getChartAndLabelComponentIdFromPath from 'src/dashboard/util/getChartAndLabelComponentIdFromPath';
 import useFilterFocusHighlightStyles from 'src/dashboard/util/useFilterFocusHighlightStyles';
+import HoverMenu from '../menu/HoverMenu';
+import DeleteComponentButton from '../DeleteComponentButton';
 
 export const CHART_MARGIN = 32;
 
@@ -73,13 +77,11 @@ const fullSizeStyle = css`
 
 const ChartHolder: React.FC<ChartHolderProps> = ({
   id,
-  parentId,
   component,
   editMode,
   isComponentVisible,
   dashboardId,
   fullSizeChartId,
-  deleteComponent,
   updateComponents,
   setFullSizeChartId,
   isInView,
@@ -87,6 +89,8 @@ const ChartHolder: React.FC<ChartHolderProps> = ({
 }) => {
   const { chartId } = component.meta;
   const isFullSize = fullSizeChartId === chartId;
+
+  const { deleteElements } = useReactFlow();
 
   const focusHighlightStyles = useFilterFocusHighlightStyles(chartId);
   const dashboardState = useSelector(
@@ -188,6 +192,10 @@ const ChartHolder: React.FC<ChartHolderProps> = ({
     }));
   }, []);
 
+  const handleDeleteComponent = useCallback(() => {
+    deleteElements({ nodes: [{ id }] });
+  }, [deleteElements, id]);
+
   return (
     <div
       data-test="dashboard-component-chart-holder"
@@ -232,6 +240,13 @@ const ChartHolder: React.FC<ChartHolderProps> = ({
         extraControls={extraControls}
         isInView={isInView}
       />
+      {editMode && (
+        <HoverMenu position="top">
+          <div data-test="dashboard-delete-component-button">
+            <DeleteComponentButton onDelete={handleDeleteComponent} />
+          </div>
+        </HoverMenu>
+      )}
     </div>
   );
 };
