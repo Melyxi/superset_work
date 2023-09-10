@@ -166,6 +166,7 @@ export const reactFlowStyles = `
     pointer-events: all;
   }
   .react-flow__panel {
+    display: none;
     position: absolute;
     z-index: 5;
     margin: 15px;
