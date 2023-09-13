@@ -261,6 +261,33 @@ function SelectPageSize({
   );
 }
 
+function parseString(input: string | undefined): {
+  pref: string | null;
+  // d3: string | null;
+  suff: string | null;
+} {
+  if (input === undefined) {
+    return { pref: null, suff: null };
+  }
+  const parts = input.split(/\s*,\s*/);
+  let pref: string | null = null;
+  // let d3: string | null = null;
+  let suff: string | null = null;
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const part of parts) {
+    if (part.startsWith('pref:')) {
+      pref = part.substring('pref:'.length).trim();
+      // } else if (part.startsWith('d3:')) {
+      //   d3 = part.substring('d3:'.length).trim();
+    } else if (part.startsWith('suff:')) {
+      suff = part.substring('suff:'.length).trim();
+    }
+  }
+
+  return { pref, suff };
+}
+
 const getNoResultsMessage = (filter: string) =>
   filter ? t('No matching records found') : t('No records found');
 
@@ -709,6 +736,8 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                 })};
               `}
           `;
+
+          const { pref, suff } = parseString(config.FormatterValue);
           const cellProps = {
             // show raw number in title in case of numeric values
             title: typeof value === 'number' ? String(value) : undefined,
@@ -777,13 +806,17 @@ export default function TableChart<D extends DataRecord = DataRecord>(
                   className="dt-truncate-cell"
                   style={columnWidth ? { width: columnWidth } : undefined}
                 >
-                  {sideIcon === 'left' ? iconAdd : ''}
-                  {showValue ? text : ''} {sideIcon === 'right' ? iconAdd : ''}
+                  {sideIcon === 'left' ? iconAdd : ''}{' '}
+                  {showValue && pref ? pref : ''} {showValue ? text : ''}{' '}
+                  {showValue && suff ? suff : ''}
+                  {sideIcon === 'right' ? iconAdd : ''}
                 </div>
               ) : (
                 <div style={columnWidth ? { width: columnWidth } : undefined}>
-                  {sideIcon === 'left' ? iconAdd : ''}
-                  {showValue ? text : ''} {sideIcon === 'right' ? iconAdd : ''}
+                  {sideIcon === 'left' ? iconAdd : ''}{' '}
+                  {showValue && pref ? pref : ''} {showValue ? text : ''}{' '}
+                  {showValue && suff ? suff : ''}
+                  {sideIcon === 'right' ? iconAdd : ''}
                 </div>
               )}
             </StyledCell>

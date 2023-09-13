@@ -43,7 +43,16 @@ export type SharedColumnConfigProp =
   | 'showCellBars'
   | 'backgroundColor'
   | 'columnFontSize'
-  | 'HiddenColumn';
+  | 'HiddenColumn'
+  | 'FormatterValue';
+
+const FormatterValue: ControlFormItemSpec<'Input'> = {
+  controlType: 'Input',
+  label: t('Formatter Value cell'),
+  description: t('Formatter Value cell'),
+  defaultValue: '',
+  debounceDelay: 200,
+};
 
 const backgroundColor: ControlFormItemSpec<'Input'> = {
   controlType: 'Input',
@@ -193,6 +202,7 @@ export const SHARED_COLUMN_CONFIG_PROPS = {
   columnFontSize,
   backgroundColor,
   HiddenColumn,
+  FormatterValue,
 };
 
 export type SharedColumnConfig = {
@@ -209,6 +219,7 @@ export const DEFAULT_CONFIG_FORM_LAYOUT: ColumnConfigFormLayout = {
     ['truncateLongCells'],
     ['columnFontSize'],
     ['HiddenColumn'],
+    ['FormatterValue'],
   ],
   [GenericDataType.NUMERIC]: [
     [
@@ -222,6 +233,7 @@ export const DEFAULT_CONFIG_FORM_LAYOUT: ColumnConfigFormLayout = {
     ['alignPositiveNegative', 'colorPositiveNegative'],
     ['showCellBars'],
     ['HiddenColumn'],
+    ['FormatterValue'],
   ],
   [GenericDataType.TEMPORAL]: [
     [
@@ -230,6 +242,7 @@ export const DEFAULT_CONFIG_FORM_LAYOUT: ColumnConfigFormLayout = {
     ],
     ['d3TimeFormat'],
     ['HiddenColumn'],
+    ['FormatterValue'],
   ],
   [GenericDataType.BOOLEAN]: [
     [
@@ -239,5 +252,6 @@ export const DEFAULT_CONFIG_FORM_LAYOUT: ColumnConfigFormLayout = {
     ['backgroundColor'],
     ['columnFontSize'],
     ['HiddenColumn'],
+    ['FormatterValue'],
   ],
 };
