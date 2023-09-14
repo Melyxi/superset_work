@@ -314,6 +314,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     setDataMask,
     showCellBars = true,
     sortDesc = false,
+    hideHeader = false,
     filters,
     sticky = true, // whether to use sticky header
     columnColorFormatters,
@@ -332,7 +333,6 @@ export default function TableChart<D extends DataRecord = DataRecord>(
   });
   // keep track of whether column order changed, so that column widths can too
   const [columnOrderToggle, setColumnOrderToggle] = useState(false);
-
   // only take relevant page size options
   const pageSizeOptions = useMemo(() => {
     const getServerPagination = (n: number) => n <= rowCount;
@@ -888,6 +888,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
       totals,
       columnColorFormatters,
       columnOrderToggle,
+      hideHeader,
     ],
   );
 
@@ -937,7 +938,6 @@ export default function TableChart<D extends DataRecord = DataRecord>(
   }, [width, height, handleSizeChange, tableSize]);
 
   const { width: widthFromState, height: heightFromState } = tableSize;
-
   return (
     <Styles>
       <DataTable<D>
@@ -962,6 +962,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         serverPagination={serverPagination}
         onServerPaginationChange={handleServerPaginationChange}
         onColumnOrderChange={() => setColumnOrderToggle(!columnOrderToggle)}
+        hideHeader={hideHeader}
         // 9 page items in > 340px works well even for 100+ pages
         maxPageItemCount={width > 340 ? 9 : 7}
         noResults={getNoResultsMessage}

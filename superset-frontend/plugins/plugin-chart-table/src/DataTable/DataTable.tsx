@@ -67,6 +67,7 @@ export interface DataTableProps<D extends object> extends TableOptions<D> {
   rowCount: number;
   wrapperRef?: MutableRefObject<HTMLDivElement>;
   onColumnOrderChange: () => void;
+  hideHeader?: boolean;
 }
 
 export interface RenderHTMLCellProps extends HTMLProps<HTMLTableCellElement> {
@@ -83,6 +84,7 @@ export default typedMemo(function DataTable<D extends object>({
   columns,
   data,
   serverPaginationData,
+  hideHeader,
   width: initialWidth = '100%',
   height: initialHeight = 300,
   pageSize: initialPageSize = 0,
@@ -205,7 +207,6 @@ export default typedMemo(function DataTable<D extends object>({
       setPageSize_(size === 0 ? resultsSize : size);
     }
   };
-
   const noResults =
     typeof noResultsText === 'function'
       ? noResultsText(filterValue as string)
@@ -220,7 +221,9 @@ export default typedMemo(function DataTable<D extends object>({
   }
 
   const shouldRenderFooter = columns.some(x => !!x.Footer);
-
+  const hideHeaderLayout: CSSProperties = hideHeader
+    ? { visibility: 'hidden' }
+    : {};
   let columnBeingDragged = -1;
 
   const onDragStart = (e: React.DragEvent) => {
@@ -255,7 +258,11 @@ export default typedMemo(function DataTable<D extends object>({
           const { key: headerGroupKey, ...headerGroupProps } =
             headerGroup.getHeaderGroupProps();
           return (
-            <tr key={headerGroupKey || headerGroup.id} {...headerGroupProps}>
+            <tr
+              key={headerGroupKey || headerGroup.id}
+              {...headerGroupProps}
+              style={hideHeaderLayout}
+            >
               {headerGroup.headers.map(column =>
                 column.render('Header', {
                   key: column.id,

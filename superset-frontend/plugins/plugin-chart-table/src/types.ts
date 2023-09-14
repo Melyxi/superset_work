@@ -104,6 +104,7 @@ export interface TableChartTransformedProps<D extends DataRecord = DataRecord> {
   percentMetrics?: (keyof D)[];
   pageSize?: number;
   showCellBars?: boolean;
+  hideHeader?: boolean;
   sortDesc?: boolean;
   includeSearch?: boolean;
   alignPositiveNegative?: boolean;

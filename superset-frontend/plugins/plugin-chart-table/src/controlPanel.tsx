@@ -51,6 +51,8 @@ import {
 } from '@superset-ui/chart-controls';
 
 import { PAGE_SIZE_OPTIONS } from './consts';
+// @ts-ignore
+import { hiddenHeader } from '../../src/controls';
 
 function getQueryMode(controls: ControlStateMapping): QueryMode {
   const mode = controls?.query_mode?.value;
@@ -551,6 +553,7 @@ const config: ControlPanelConfig = {
             },
           },
         ],
+        ...hiddenHeader,
       ],
     },
   ],
