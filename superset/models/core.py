@@ -134,6 +134,9 @@ class BackgroundTemplate(Model, AuditMixinNullable):
     background_name = Column(String(250))
     background_uri = Column(String(250), default="")
     dashboards = relationship("Dashboard", secondary=background_templates_dash)
+    width = Column(String(50), nullable=True)
+    height = Column(String(50), nullable=True)
+    description = Column(String(300), nullable=True)
 
 
 class ConfigurationMethod(str, enum.Enum):

@@ -15,19 +15,29 @@
 # specific language governing permissions and limitations
 # under the License.
 import logging
+import os
+import secrets
+import string
 from typing import Any
 
-from flask import Response
-from flask_appbuilder.api import expose, protect, rison, safe
+from flask import current_app, request, Response
+from flask_appbuilder.api import expose, ModelKeyType, rison, safe
 from flask_appbuilder.models.sqla.interface import SQLAInterface
-from flask_babel import ngettext
+from flask_appbuilder.security.decorators import protect
+from flask_babel import _, ngettext
+from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
+from werkzeug.utils import secure_filename
 
-from superset.constants import MODEL_API_RW_METHOD_PERMISSION_MAP, RouteMethod
-from superset.css_templates.commands.delete import DeleteCssTemplateCommand
-from superset.css_templates.commands.exceptions import (
-    CssTemplateDeleteFailedError,
-    CssTemplateNotFoundError,
+from superset import app
+from superset.background_templates.commands.delete import (
+    DeleteBackgroundTemplateCommand,
 )
+from superset.background_templates.commands.exceptions import (
+    BackgroundTemplateDeleteFailedError,
+    BackgroundTemplateNotFoundError,
+)
+from superset.constants import MODEL_API_RW_METHOD_PERMISSION_MAP, RouteMethod
 from superset.css_templates.filters import CssTemplateAllTextFilter
 from superset.css_templates.schemas import (
     get_delete_ids_schema,
@@ -38,6 +48,17 @@ from superset.models.core import BackgroundTemplate
 from superset.views.base_api import BaseSupersetModelRestApi, statsd_metrics
 
 logger = logging.getLogger(__name__)
+API_RESULT_RES_KEY = "result"
+BACKGROUNDS_PATH = "static/assets/images/background"
+PATH_BASE = app.config["BASE_DIR"]
+
+
+def generate_alphanum_crypt_string(length: int) -> str:
+    letters_and_digits = string.ascii_letters + string.digits
+    crypt_rand_string = "".join(
+        secrets.choice(letters_and_digits) for i in range(length)
+    )
+    return crypt_rand_string
 
 
 class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
@@ -60,6 +81,9 @@ class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
         "background_uri",
         "id",
         "background_name",
+        "description",
+        "width",
+        "height",
     ]
     list_columns = [
         "changed_on_delta_humanized",
@@ -73,8 +97,17 @@ class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
         "background_uri",
         "id",
         "background_name",
+        "description",
+        "width",
+        "height",
     ]
-    add_columns = ["background_uri", "background_name"]
+    add_columns = [
+        "background_uri",
+        "background_name",
+        "description",
+        "height",
+        "width",
+    ]
     edit_columns = add_columns
     order_columns = ["background_name"]
 
@@ -130,16 +163,116 @@ class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
         """
         item_ids = kwargs["rison"]
         try:
-            DeleteCssTemplateCommand(item_ids).run()
+            command_delete = DeleteBackgroundTemplateCommand(item_ids)
+            command_delete.run()
+            for uri in command_delete.backgrounds_uri:
+                if os.path.exists(f"{PATH_BASE}{uri}"):
+                    os.remove(f"{PATH_BASE}{uri}")
+
             return self.response(
                 200,
                 message=ngettext(
-                    "Deleted %(num)d css template",
-                    "Deleted %(num)d css templates",
+                    "Deleted %(num)d background template",
+                    "Deleted %(num)d background templates",
                     num=len(item_ids),
                 ),
             )
-        except CssTemplateNotFoundError:
+        except BackgroundTemplateNotFoundError:
             return self.response_404()
-        except CssTemplateDeleteFailedError as ex:
+        except BackgroundTemplateDeleteFailedError as ex:
             return self.response_422(message=str(ex))
+
+    def post_headless(self) -> Response:
+        """
+        POST/Add item to Model
+        """
+        background_name = request.form.get("background_name")
+        file = request.files.get("background_uri")
+        description = request.files.get("description")
+        height = request.files.get("height")
+        width = request.files.get("width")
+
+        if background_name and file:
+            if not os.path.exists(os.path.join(PATH_BASE, BACKGROUNDS_PATH)):
+                os.mkdir(os.path.join(PATH_BASE, BACKGROUNDS_PATH))
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(
+                os.path.join(PATH_BASE, BACKGROUNDS_PATH), filename
+            )
+            background_uri = f"/{os.path.join(BACKGROUNDS_PATH, filename)}"
+
+            unique_name = (
+                current_app.appbuilder.get_session.query(BackgroundTemplate)
+                .filter(BackgroundTemplate.background_name == background_name)
+                .all()
+            )
+            unique_file = (
+                current_app.appbuilder.get_session.query(BackgroundTemplate)
+                .filter(BackgroundTemplate.background_uri == background_uri)
+                .all()
+            )
+
+            if unique_name or unique_file:
+                return self.response_400(message=_("Background should be unique"))
+
+            if os.path.exists(file_path):
+                filename, file_extension = os.path.splitext(filename)
+                filename = (
+                    filename + "_" + generate_alphanum_crypt_string(6) + file_extension
+                )
+                background_uri = f"/{os.path.join(BACKGROUNDS_PATH, filename)}"
+            #
+            file_path = os.path.join(
+                os.path.join(PATH_BASE, BACKGROUNDS_PATH), filename
+            )
+
+            file.save(file_path)
+
+            save_data = {
+                "background_name": background_name,
+                "background_uri": background_uri,
+                "description": description,
+                "height": height,
+                "width": width,
+            }
+
+            try:
+                item = self.add_model_schema.load(save_data)
+            except ValidationError as err:
+                return self.response_422(message=err.messages)
+            # This validates custom Schema with custom validations
+            self.pre_add(item)
+            try:
+                self.datamodel.add(item, raise_exception=True)
+                self.post_add(item)
+                return self.response(
+                    201,
+                    **{
+                        API_RESULT_RES_KEY: self.add_model_schema.dump(
+                            item, many=False
+                        ),
+                        "id": self.datamodel.get_pk_value(item),
+                    },
+                )
+            except IntegrityError as e:
+                return self.response_422(message=str(e.orig))
+        return self.response_400(message=_("Wrong give fields"))
+
+    def delete_headless(self, pk: ModelKeyType) -> Response:
+        """
+        Delete item from Model
+        """
+        item = self.datamodel.get(pk, self._base_filters)
+        if not item:
+            return self.response_404()
+        self.pre_delete(item)
+        try:
+            background_uri = f"{PATH_BASE}{item.background_uri}"
+            if os.path.exists(background_uri):
+                os.remove(background_uri)
+
+            self.datamodel.delete(item, raise_exception=True)
+            self.post_delete(item)
+            return self.response(200, message="OK")
+        except IntegrityError as e:
+            return self.response_422(message=str(e.orig))

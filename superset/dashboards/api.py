@@ -187,6 +187,9 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         "tags.id",
         "tags.name",
         "tags.type",
+        "background",
+        "background.background_uri",
+        "background.background_name",
     ]
 
     list_select_columns = list_columns + ["changed_on", "created_on", "changed_by_fk"]
@@ -210,6 +213,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         "css",
         "json_metadata",
         "published",
+        "background",
     ]
     edit_columns = add_columns
 

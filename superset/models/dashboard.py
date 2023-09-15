@@ -51,7 +51,7 @@ from superset.connectors.base.models import BaseDatasource
 from superset.connectors.sqla.models import SqlaTable, SqlMetric, TableColumn
 from superset.daos.datasource import DatasourceDAO
 from superset.extensions import cache_manager
-from superset.models.core import background_templates_dash
+from superset.models.core import background_templates_dash, BackgroundTemplate
 from superset.models.filter_set import FilterSet
 from superset.models.helpers import AuditMixinNullable, ImportExportMixin
 from superset.models.slice import Slice
@@ -164,8 +164,8 @@ class Dashboard(Model, AuditMixinNullable, ImportExportMixin):
     is_managed_externally = Column(Boolean, nullable=False, default=False)
     external_url = Column(Text, nullable=True)
     roles = relationship(security_manager.role_model, secondary=DashboardRoles)
-    backgrounds = relationship(
-        "BackgroundTemplate", secondary=background_templates_dash
+    background: list[BackgroundTemplate] = relationship(
+        BackgroundTemplate, secondary=background_templates_dash
     )
     embedded = relationship(
         "EmbeddedDashboard",

@@ -14,20 +14,31 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+"""add new field in background
 
-openapi_spec_methods_override = {
-    "get": {"get": {"description": "Get a background template"}},
-    "get_list": {
-        "get": {
-            "description": "Get a list of background templates, use Rison or JSON "
-            "query parameters for filtering, sorting,"
-            " pagination and for selecting specific"
-            " columns and metadata.",
-        }
-    },
-    "post": {"post": {"description": "Create a background template"}},
-    "put": {"put": {"description": "Update a background template"}},
-    "delete": {"delete": {"description": "Delete background template"}},
-}
+Revision ID: 5ce815eab9ba
+Revises: 902fdfd7cf60
+Create Date: 2023-09-14 21:47:07.255474
 
-get_delete_ids_schema = {"type": "array", "items": {"type": "integer"}}
+"""
+
+# revision identifiers, used by Alembic.
+revision = "5ce815eab9ba"
+down_revision = "902fdfd7cf60"
+
+import sqlalchemy as sa
+from alembic import op
+
+
+def upgrade():
+    op.add_column("background_templates", sa.Column("width", sa.String, nullable=True))
+    op.add_column("background_templates", sa.Column("height", sa.String, nullable=True))
+    op.add_column(
+        "background_templates", sa.Column("description", sa.String, nullable=True)
+    )
+
+
+def downgrade():
+    op.drop_column("background_templates", "height")
+    op.drop_column("background_templates", "width")
+    op.drop_column("background_templates", "description")

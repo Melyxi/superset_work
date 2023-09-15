@@ -17,6 +17,10 @@
 import logging
 from typing import Optional
 
+from superset.background_templates.commands.exceptions import (
+    BackgroundTemplateDeleteFailedError,
+    BackgroundTemplateNotFoundError,
+)
 from superset.commands.base import BaseCommand
 from superset.css_templates.commands.exceptions import (
     CssTemplateDeleteFailedError,
@@ -29,23 +33,26 @@ from superset.models.core import BackgroundTemplate
 logger = logging.getLogger(__name__)
 
 
-class DeleteCssTemplateCommand(BaseCommand):
+class DeleteBackgroundTemplateCommand(BaseCommand):
     def __init__(self, model_ids: list[int]):
         self._model_ids = model_ids
         self._models: Optional[list[BackgroundTemplate]] = None
+        self.backgrounds_uri: list[str] = []
 
     def run(self) -> None:
         self.validate()
         assert self._models
 
         try:
+            self.backgrounds_uri = [item.background_uri for item in self._models]
             BackgroundTemplateDAO.delete(self._models)
+
         except DAODeleteFailedError as ex:
             logger.exception(ex.exception)
-            raise CssTemplateDeleteFailedError() from ex
+            raise BackgroundTemplateDeleteFailedError() from ex
 
     def validate(self) -> None:
         # Validate/populate model exists
         self._models = BackgroundTemplateDAO.find_by_ids(self._model_ids)
         if not self._models or len(self._models) != len(self._model_ids):
-            raise CssTemplateNotFoundError()
+            raise BackgroundTemplateNotFoundError()

@@ -19,9 +19,9 @@ from flask_babel import lazy_gettext as _
 from superset.commands.exceptions import CommandException, DeleteFailedError
 
 
-class CssTemplateDeleteFailedError(DeleteFailedError):
+class BackgroundTemplateDeleteFailedError(DeleteFailedError):
     message = _("Background templates could not be deleted.")
 
 
-class CssTemplateNotFoundError(CommandException):
+class BackgroundTemplateNotFoundError(CommandException):
     message = _("Background template not found.")
