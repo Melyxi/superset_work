@@ -188,9 +188,9 @@ class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
         """
         background_name = request.form.get("background_name")
         file = request.files.get("background_uri")
-        description = request.files.get("description")
-        height = request.files.get("height")
-        width = request.files.get("width")
+        description = request.form.get("description")
+        height = request.form.get("height")
+        width = request.form.get("width")
 
         if background_name and file:
             if not os.path.exists(os.path.join(PATH_BASE, BACKGROUNDS_PATH)):
