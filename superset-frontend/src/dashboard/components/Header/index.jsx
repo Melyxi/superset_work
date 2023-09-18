@@ -388,6 +388,7 @@ class Header extends React.PureComponent {
       last_modified_time: lastModifiedTime,
       owners: dashboardInfo.owners,
       roles: dashboardInfo.roles,
+      background: dashboardInfo.background,
       slug,
       metadata: {
         ...dashboardInfo?.metadata,
@@ -490,6 +491,7 @@ class Header extends React.PureComponent {
         certification_details: updates.certificationDetails,
         owners: updates.owners,
         roles: updates.roles,
+        background: updates.background,
       });
       setUnsavedChanges(true);
       dashboardTitleChanged(updates.title);

@@ -57,6 +57,13 @@ const CssTemplateList = lazy(
     ),
 );
 
+const BackgroundTemplateList = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "BackgroundTemplateList" */ 'src/pages/BackgroundTemplateList'
+    ),
+);
+
 const DashboardList = lazy(
   () =>
     import(/* webpackChunkName: "DashboardList" */ 'src/pages/DashboardList'),
@@ -162,6 +169,10 @@ export const routes: Routes = [
   {
     path: '/csstemplatemodelview/list/',
     Component: CssTemplateList,
+  },
+  {
+    path: '/backgroundtemplatemodelview/list/',
+    Component: BackgroundTemplateList,
   },
   {
     path: '/annotationlayer/list/',

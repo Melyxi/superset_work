@@ -23,6 +23,7 @@ import { FormItem } from 'src/components/Form';
 import jsonStringify from 'json-stringify-pretty-compact';
 import Button from 'src/components/Button';
 import { AntdForm, AsyncSelect, Col, Row } from 'src/components';
+import { SelectOptionsPagePromise } from 'src/components/Select/types';
 import rison from 'rison';
 import {
   CategoricalColorNamespace,
@@ -89,6 +90,18 @@ type DashboardInfo = {
   certificationDetails: string;
   isManagedExternally: boolean;
 };
+type Background = {
+  id: number;
+  background_name: string;
+  background_uri: string;
+  description?: string;
+  width?: string;
+  height?: string;
+};
+type BackgroundOption = Background & {
+  value: number;
+  label: string;
+};
 
 const PropertiesModal = ({
   addSuccessToast,
@@ -110,6 +123,7 @@ const PropertiesModal = ({
   const [dashboardInfo, setDashboardInfo] = useState<DashboardInfo>();
   const [owners, setOwners] = useState<Owners>([]);
   const [roles, setRoles] = useState<Roles>([]);
+  const [background, setBackground] = useState<BackgroundOption[]>([]);
   const saveLabel = onlyApply ? t('Apply') : t('Save');
   const [tags, setTags] = useState<TagType[]>([]);
   const categoricalSchemeRegistry = getCategoricalSchemeRegistry();
@@ -177,6 +191,7 @@ const PropertiesModal = ({
         certification_details,
         owners,
         roles,
+        background,
         metadata,
         is_managed_externally,
       } = dashboardData;
@@ -193,6 +208,7 @@ const PropertiesModal = ({
       setDashboardInfo(dashboardInfo);
       setOwners(owners);
       setRoles(roles);
+      setBackground(background);
       setColorScheme(metadata.color_scheme);
 
       const metaDataCopy = omit(metadata, [
@@ -308,6 +324,40 @@ const PropertiesModal = ({
     }
     setColorScheme(colorScheme);
   };
+
+  const handleOnChangeBackground = (bg: any, option: BackgroundOption) => {
+    setBackground(option ? [option] : []);
+  };
+
+  const handleBackgroundSelectValue = () => {
+    const [bg] = background;
+
+    if (!bg) {
+      return undefined;
+    }
+
+    return {
+      ...bg,
+      value: bg.id,
+      label: `${bg.background_name} - ${bg.background_uri.split('/').pop()}`,
+    };
+  };
+
+  const backgroundOptions: SelectOptionsPagePromise = () =>
+    SupersetClient.get({
+      endpoint: `/api/v1/background_template/`,
+    }).then(response => ({
+      data: (response.json.result as Background[]).map<BackgroundOption>(
+        item => ({
+          ...item,
+          value: item.id,
+          label: `${item.background_name} - ${item.background_uri
+            .split('/')
+            .pop()}`,
+        }),
+      ),
+      totalCount: response.json.length,
+    }));
 
   const updateTags = (oldTags: TagType[], newTags: TagType[]) => {
     // update the tags for this object
@@ -436,6 +486,7 @@ const PropertiesModal = ({
       colorNamespace,
       certifiedBy,
       certificationDetails,
+      background: background.map(({ value, label, ...other }) => other),
       ...moreOnSubmitProps,
     };
     if (onlyApply) {
@@ -451,6 +502,7 @@ const PropertiesModal = ({
           slug: slug || null,
           json_metadata: currentJsonMetadata || null,
           owners: (owners || []).map(o => o.id),
+          background: background.map(({ value, label, ...other }) => other),
           certified_by: certifiedBy || null,
           certification_details:
             certifiedBy && certificationDetails ? certificationDetails : null,
@@ -701,6 +753,26 @@ const PropertiesModal = ({
         {isFeatureEnabled(FeatureFlag.DASHBOARD_RBAC)
           ? getRowsWithRoles()
           : getRowsWithoutRoles()}
+        <Row>
+          <Col xs={24} md={24}>
+            <h3>{t('Background')}</h3>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <StyledFormItem label={t('Background')}>
+              <AsyncSelect
+                allowClear
+                ariaLabel={t('Background')}
+                disabled={isLoading}
+                mode="single"
+                onChange={handleOnChangeBackground}
+                options={backgroundOptions}
+                value={handleBackgroundSelectValue()}
+              />
+            </StyledFormItem>
+          </Col>
+        </Row>
         <Row>
           <Col xs={24} md={24}>
             <h3>{t('Certification')}</h3>
