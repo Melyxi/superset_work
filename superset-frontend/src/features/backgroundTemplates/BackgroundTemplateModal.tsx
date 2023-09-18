@@ -85,8 +85,8 @@ const BackgroundTemplateModal: FunctionComponent<BackgroundTemplateModalProps> =
     const onSave = (values: TemplateObject) => {
       if (isEditMode) {
         // Edit
-        if (values?.id) {
-          const current: TemplateObject = { ...values };
+        const current: TemplateObject = { ...initialValues, ...values };
+        if (current?.id) {
           const update_id = current.id;
           delete current.id;
           delete current.created_by;
