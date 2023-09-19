@@ -114,6 +114,20 @@ function BackgroundTemplatesList({
         Header: t('Name'),
       },
       {
+        accessor: 'description',
+        Header: t('Description'),
+      },
+      {
+        accessor: 'width',
+        Header: t('Width'),
+        size: 'xl',
+      },
+      {
+        accessor: 'height',
+        Header: t('Height'),
+        size: 'xl',
+      },
+      {
         Cell: ({
           row: {
             original: {
