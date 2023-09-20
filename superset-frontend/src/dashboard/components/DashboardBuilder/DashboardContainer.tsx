@@ -218,8 +218,14 @@ const DashboardContainer: FC<DashboardContainerProps> = ({ topLevelTabs }) => {
   const min = Math.min(tabIndex, childIds.length - 1);
   const activeKey = min === 0 ? DASHBOARD_GRID_ID : min.toString();
 
+  const background = dashboardInfo.background?.[0]?.background_uri;
+
   return (
-    <div className="grid-container" data-test="grid-container">
+    <div
+      className="grid-container"
+      data-test="grid-container"
+      style={background ? { backgroundImage: `url(${background})` } : undefined}
+    >
       <ParentSize>
         {({ width }) => (
           /*
