@@ -31,14 +31,12 @@ from alembic import op
 
 
 def upgrade():
-    op.add_column("background_templates", sa.Column("width", sa.String, nullable=True))
-    op.add_column("background_templates", sa.Column("height", sa.String, nullable=True))
-    op.add_column(
-        "background_templates", sa.Column("description", sa.String, nullable=True)
-    )
+    op.add_column("shared_images", sa.Column("width", sa.String, nullable=True))
+    op.add_column("shared_images", sa.Column("height", sa.String, nullable=True))
+    op.add_column("shared_images", sa.Column("description", sa.String, nullable=True))
 
 
 def downgrade():
-    op.drop_column("background_templates", "height")
-    op.drop_column("background_templates", "width")
-    op.drop_column("background_templates", "description")
+    op.drop_column("shared_images", "height")
+    op.drop_column("shared_images", "width")
+    op.drop_column("shared_images", "description")

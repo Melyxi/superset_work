@@ -187,9 +187,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         "tags.id",
         "tags.name",
         "tags.type",
-        "background",
-        "background.background_uri",
-        "background.background_name",
+        "images",
     ]
 
     list_select_columns = list_columns + ["changed_on", "created_on", "changed_by_fk"]
@@ -213,7 +211,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         "css",
         "json_metadata",
         "published",
-        "background",
+        "images",
     ]
     edit_columns = add_columns
 
@@ -603,8 +601,10 @@ class DashboardRestApi(BaseSupersetModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
+        print()
         try:
             item = self.edit_model_schema.load(request.json)
+            print(f"\n########{item=}########")
         # This validates custom Schema with custom validations
         except ValidationError as error:
             return self.response_400(message=error.messages)

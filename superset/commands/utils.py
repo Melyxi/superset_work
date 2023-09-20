@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flask import g
+from flask import current_app, g
 from flask_appbuilder.security.sqla.models import Role, User
 
 from superset import security_manager
@@ -30,6 +30,7 @@ from superset.commands.exceptions import (
 from superset.daos.datasource import DatasourceDAO
 from superset.daos.exceptions import DatasourceNotFound
 from superset.extensions import db
+from superset.models.core import SharedImages
 from superset.utils.core import DatasourceType, get_user_id
 
 if TYPE_CHECKING:
@@ -75,6 +76,26 @@ def populate_roles(role_ids: list[int] | None = None) -> list[Role]:
         if len(roles) != len(role_ids):
             raise RolesNotFoundValidationError()
     return roles
+
+
+def populate_backgrounds(
+    backgrounds_ids: list[int] | None = None,
+) -> list[SharedImages]:
+    """
+    Helper function for commands, will fetch all backgrounds from backgrounds id's
+     :raises RolesNotFoundValidationError: If a background in the input list is not found
+    :param backgrounds_ids: A List of backgrounds by id's
+    """
+    backgrounds: list[SharedImages] = []
+    if backgrounds_ids:
+        backgrounds = (
+            current_app.appbuilder.get_session.query(SharedImages)
+            .filter(SharedImages.id.in_(backgrounds_ids))
+            .all()
+        )
+        if len(backgrounds) != len(backgrounds_ids):
+            raise RolesNotFoundValidationError()
+    return backgrounds
 
 
 def get_datasource_by_id(datasource_id: int, datasource_type: str) -> BaseDatasource:

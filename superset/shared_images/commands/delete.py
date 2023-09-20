@@ -17,42 +17,38 @@
 import logging
 from typing import Optional
 
-from superset.background_templates.commands.exceptions import (
-    BackgroundTemplateDeleteFailedError,
-    BackgroundTemplateNotFoundError,
-)
 from superset.commands.base import BaseCommand
-from superset.css_templates.commands.exceptions import (
-    CssTemplateDeleteFailedError,
-    CssTemplateNotFoundError,
-)
-from superset.daos.background import BackgroundTemplateDAO
 from superset.daos.exceptions import DAODeleteFailedError
-from superset.models.core import BackgroundTemplate
+from superset.daos.shared_image import SharedImageDAO
+from superset.models.core import SharedImages
+from superset.shared_images.commands.exceptions import (
+    SharedImageDeleteFailedError,
+    SharedImageNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class DeleteBackgroundTemplateCommand(BaseCommand):
+class DeleteSharedImageCommand(BaseCommand):
     def __init__(self, model_ids: list[int]):
         self._model_ids = model_ids
-        self._models: Optional[list[BackgroundTemplate]] = None
-        self.backgrounds_uri: list[str] = []
+        self._models: Optional[list[SharedImages]] = None
+        self.images_uri: list[str] = []
 
     def run(self) -> None:
         self.validate()
         assert self._models
 
         try:
-            self.backgrounds_uri = [item.background_uri for item in self._models]
-            BackgroundTemplateDAO.delete(self._models)
+            self.images_uri = [item.image_uri for item in self._models]
+            SharedImageDAO.delete(self._models)
 
         except DAODeleteFailedError as ex:
             logger.exception(ex.exception)
-            raise BackgroundTemplateDeleteFailedError() from ex
+            raise SharedImageDeleteFailedError() from ex
 
     def validate(self) -> None:
         # Validate/populate model exists
-        self._models = BackgroundTemplateDAO.find_by_ids(self._model_ids)
+        self._models = SharedImageDAO.find_by_ids(self._model_ids)
         if not self._models or len(self._models) != len(self._model_ids):
-            raise BackgroundTemplateNotFoundError()
+            raise SharedImageNotFoundError()

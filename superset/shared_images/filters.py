@@ -20,13 +20,13 @@ from flask_babel import lazy_gettext as _
 from sqlalchemy import or_
 from sqlalchemy.orm.query import Query
 
-from superset.models.core import BackgroundTemplate
+from superset.models.core import SharedImages
 from superset.views.base import BaseFilter
 
 
-class CssTemplateAllTextFilter(BaseFilter):  # pylint: disable=too-few-public-methods
+class SharedImagesAllTextFilter(BaseFilter):  # pylint: disable=too-few-public-methods
     name = _("All Text")
-    arg_name = "background_template_all_text"
+    arg_name = "shared_images_all_text"
 
     def apply(self, query: Query, value: Any) -> Query:
         if not value:
@@ -34,7 +34,7 @@ class CssTemplateAllTextFilter(BaseFilter):  # pylint: disable=too-few-public-me
         ilike_value = f"%{value}%"
         return query.filter(
             or_(
-                BackgroundTemplate.background_uri.ilike(ilike_value),
-                BackgroundTemplate.background_name.ilike(ilike_value),
+                SharedImages.image_uri.ilike(ilike_value),
+                SharedImages.image_name.ilike(ilike_value),
             )
         )

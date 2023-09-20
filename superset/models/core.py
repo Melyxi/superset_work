@@ -116,24 +116,24 @@ class CssTemplate(Model, AuditMixinNullable):
     css = Column(Text, default="")
 
 
-background_templates_dash = Table(
-    "background_templates_dash",
+shared_images_dash = Table(
+    "shared_images_dash",
     Model.metadata,
-    Column(
-        "background_id", Integer, ForeignKey("background_templates.id"), nullable=False
-    ),
+    Column("id", Integer, primary_key=True, comment="id comment"),
+    Column("image_id", Integer, ForeignKey("shared_images.id"), nullable=False),
     Column("dashboard_id", Integer, ForeignKey("dashboards.id"), nullable=False),
 )
 
 
-class BackgroundTemplate(Model, AuditMixinNullable):
+class SharedImages(Model, AuditMixinNullable):
     """Background templates for dashboards"""
 
-    __tablename__ = "background_templates"
+    __tablename__ = "shared_images"
+
     id = Column(Integer, primary_key=True)
-    background_name = Column(String(250))
-    background_uri = Column(String(250), default="")
-    dashboards = relationship("Dashboard", secondary=background_templates_dash)
+    image_name = Column(String(250))  # image_name
+    image_uri = Column(String(250), default="")  # image_uri
+    # dashboards = relationship("Dashboard", secondary=shared_images_dash, backref="shared_images")
     width = Column(String(50), nullable=True)
     height = Column(String(50), nullable=True)
     description = Column(String(300), nullable=True)

@@ -23,7 +23,7 @@ from marshmallow import ValidationError
 
 from superset import security_manager
 from superset.commands.base import BaseCommand, UpdateMixin
-from superset.commands.utils import populate_roles
+from superset.commands.utils import populate_backgrounds, populate_roles
 from superset.daos.dashboard import DashboardDAO
 from superset.daos.exceptions import DAOUpdateFailedError
 from superset.dashboards.commands.exceptions import (
@@ -69,6 +69,7 @@ class UpdateDashboardCommand(UpdateMixin, BaseCommand):
         exceptions: list[ValidationError] = []
         owners_ids: Optional[list[int]] = self._properties.get("owners")
         roles_ids: Optional[list[int]] = self._properties.get("roles")
+        backgrounds_ids: Optional[list[int]] = self._properties.get("background")
         slug: Optional[str] = self._properties.get("slug")
 
         # Validate/populate model exists
@@ -96,6 +97,15 @@ class UpdateDashboardCommand(UpdateMixin, BaseCommand):
         if exceptions:
             raise DashboardInvalidError(exceptions=exceptions)
 
+        # Validate/Populate background
+        if backgrounds_ids is None:
+            backgrounds_ids = [background.id for background in self._model.background]
+        try:
+            background = populate_backgrounds(backgrounds_ids)
+            print(f"\n########{background=}########")
+            self._properties["background"] = background
+        except ValidationError as ex:
+            exceptions.append(ex)
         # Validate/Populate role
         if roles_ids is None:
             roles_ids = [role.id for role in self._model.roles]

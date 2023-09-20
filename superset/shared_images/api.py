@@ -30,21 +30,19 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.utils import secure_filename
 
 from superset import app
-from superset.background_templates.commands.delete import (
-    DeleteBackgroundTemplateCommand,
-)
-from superset.background_templates.commands.exceptions import (
-    BackgroundTemplateDeleteFailedError,
-    BackgroundTemplateNotFoundError,
-)
 from superset.constants import MODEL_API_RW_METHOD_PERMISSION_MAP, RouteMethod
-from superset.css_templates.filters import CssTemplateAllTextFilter
-from superset.css_templates.schemas import (
+from superset.extensions import event_logger
+from superset.models.core import SharedImages
+from superset.shared_images.commands.delete import DeleteSharedImageCommand
+from superset.shared_images.commands.exceptions import (
+    SharedImageDeleteFailedError,
+    SharedImageNotFoundError,
+)
+from superset.shared_images.filters import SharedImagesAllTextFilter
+from superset.shared_images.schemas import (
     get_delete_ids_schema,
     openapi_spec_methods_override,
 )
-from superset.extensions import event_logger
-from superset.models.core import BackgroundTemplate
 from superset.views.base_api import BaseSupersetModelRestApi, statsd_metrics
 
 logger = logging.getLogger(__name__)
@@ -61,26 +59,26 @@ def generate_alphanum_crypt_string(length: int) -> str:
     return crypt_rand_string
 
 
-class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
-    datamodel = SQLAInterface(BackgroundTemplate)
+class SharedImageRestApi(BaseSupersetModelRestApi):
+    datamodel = SQLAInterface(SharedImages)
 
     include_route_methods = RouteMethod.REST_MODEL_VIEW_CRUD_SET | {
         RouteMethod.RELATED,
         "bulk_delete",  # not using RouteMethod since locally defined
     }
-    class_permission_name = "BackgroundTemplate"
+    class_permission_name = "SharedImage"
     method_permission_name = MODEL_API_RW_METHOD_PERMISSION_MAP
 
-    resource_name = "background_template"
+    resource_name = "shared_image"
     allow_browser_login = True
 
     show_columns = [
         "created_by.first_name",
         "created_by.id",
         "created_by.last_name",
-        "background_uri",
+        "image_uri",
         "id",
-        "background_name",
+        "image_name",
         "description",
         "width",
         "height",
@@ -94,30 +92,30 @@ class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
         "created_by.first_name",
         "created_by.id",
         "created_by.last_name",
-        "background_uri",
+        "image_uri",
         "id",
-        "background_name",
+        "image_name",
         "description",
         "width",
         "height",
     ]
     add_columns = [
-        "background_uri",
-        "background_name",
+        "image_uri",
+        "image_name",
         "description",
         "height",
         "width",
     ]
     edit_columns = add_columns
-    order_columns = ["background_name"]
+    order_columns = ["image_name"]
 
-    search_filters = {"background_name": [CssTemplateAllTextFilter]}
+    search_filters = {"image_name": [SharedImagesAllTextFilter]}
     allowed_rel_fields = {"created_by"}
 
     apispec_parameter_schemas = {
         "get_delete_ids_schema": get_delete_ids_schema,
     }
-    openapi_spec_tag = "background Templates"
+    openapi_spec_tag = "shared image"
     openapi_spec_methods = openapi_spec_methods_override
 
     @expose("/", methods=("DELETE",))
@@ -130,7 +128,7 @@ class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
     )
     @rison(get_delete_ids_schema)
     def bulk_delete(self, **kwargs: Any) -> Response:
-        """Delete bulk background Templates
+        """Delete bulk image
         ---
         delete:
           description: >-
@@ -163,64 +161,64 @@ class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
         """
         item_ids = kwargs["rison"]
         try:
-            command_delete = DeleteBackgroundTemplateCommand(item_ids)
+            command_delete = DeleteSharedImageCommand(item_ids)
             command_delete.run()
-            for uri in command_delete.backgrounds_uri:
+            for uri in command_delete.images_uri:
                 if os.path.exists(f"{PATH_BASE}{uri}"):
                     os.remove(f"{PATH_BASE}{uri}")
 
             return self.response(
                 200,
                 message=ngettext(
-                    "Deleted %(num)d background template",
-                    "Deleted %(num)d background templates",
+                    "Deleted %(num)d image template",
+                    "Deleted %(num)d image templates",
                     num=len(item_ids),
                 ),
             )
-        except BackgroundTemplateNotFoundError:
+        except SharedImageNotFoundError:
             return self.response_404()
-        except BackgroundTemplateDeleteFailedError as ex:
+        except SharedImageDeleteFailedError as ex:
             return self.response_422(message=str(ex))
 
     def post_headless(self) -> Response:
         """
         POST/Add item to Model
         """
-        background_name = request.form.get("background_name")
-        file = request.files.get("background_uri")
+        image_name = request.form.get("image_name")
+        file = request.files.get("image_uri")
         description = request.form.get("description")
         height = request.form.get("height")
         width = request.form.get("width")
 
-        if background_name and file:
+        if image_name and file:
             if not os.path.exists(os.path.join(PATH_BASE, BACKGROUNDS_PATH)):
                 os.mkdir(os.path.join(PATH_BASE, BACKGROUNDS_PATH))
             filename = secure_filename(file.filename)
             file_path = os.path.join(
                 os.path.join(PATH_BASE, BACKGROUNDS_PATH), filename
             )
-            background_uri = f"/{os.path.join(BACKGROUNDS_PATH, filename)}"
+            image_uri = f"/{os.path.join(BACKGROUNDS_PATH, filename)}"
 
             unique_name = (
-                current_app.appbuilder.get_session.query(BackgroundTemplate)
-                .filter(BackgroundTemplate.background_name == background_name)
+                current_app.appbuilder.get_session.query(SharedImages)
+                .filter(SharedImages.image_name == image_name)
                 .all()
             )
             unique_file = (
-                current_app.appbuilder.get_session.query(BackgroundTemplate)
-                .filter(BackgroundTemplate.background_uri == background_uri)
+                current_app.appbuilder.get_session.query(SharedImages)
+                .filter(SharedImages.image_uri == image_uri)
                 .all()
             )
 
             if unique_name or unique_file:
-                return self.response_400(message=_("Background should be unique"))
+                return self.response_400(message=_("image should be unique"))
 
             if os.path.exists(file_path):
                 filename, file_extension = os.path.splitext(filename)
                 filename = (
                     filename + "_" + generate_alphanum_crypt_string(6) + file_extension
                 )
-                background_uri = f"/{os.path.join(BACKGROUNDS_PATH, filename)}"
+                image_uri = f"/{os.path.join(BACKGROUNDS_PATH, filename)}"
             #
             file_path = os.path.join(
                 os.path.join(PATH_BASE, BACKGROUNDS_PATH), filename
@@ -229,8 +227,8 @@ class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
             file.save(file_path)
 
             save_data = {
-                "background_name": background_name,
-                "background_uri": background_uri,
+                "image_name": image_name,
+                "image_uri": image_uri,
                 "description": description,
                 "height": height,
                 "width": width,
@@ -267,12 +265,109 @@ class BackgroundTemplateRestApi(BaseSupersetModelRestApi):
             return self.response_404()
         self.pre_delete(item)
         try:
-            background_uri = f"{PATH_BASE}{item.background_uri}"
-            if os.path.exists(background_uri):
-                os.remove(background_uri)
+            image_uri = f"{PATH_BASE}{item.image_uri}"
+            if os.path.exists(image_uri):
+                os.remove(image_uri)
 
             self.datamodel.delete(item, raise_exception=True)
             self.post_delete(item)
             return self.response(200, message="OK")
         except IntegrityError as e:
             return self.response_422(message=str(e.orig))
+
+    def put_headless(self, pk: ModelKeyType) -> Response:
+        """
+        PUT/Edit item to Model
+        """
+        item = self.datamodel.get(pk, self._base_filters)
+
+        image_name = request.form.get("image_name")
+        file = request.files.get("image_uri")
+        description = request.form.get("description")
+        height = request.form.get("height")
+        width = request.form.get("width")
+
+        if image_name and file:
+            if not os.path.exists(os.path.join(PATH_BASE, BACKGROUNDS_PATH)):
+                os.mkdir(os.path.join(PATH_BASE, BACKGROUNDS_PATH))
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(
+                os.path.join(PATH_BASE, BACKGROUNDS_PATH), filename
+            )
+            image_uri = f"/{os.path.join(BACKGROUNDS_PATH, filename)}"
+
+            unique_name = (
+                current_app.appbuilder.get_session.query(SharedImages)
+                .filter(SharedImages.image_name == image_name)
+                .all()
+            )
+            unique_file = (
+                current_app.appbuilder.get_session.query(SharedImages)
+                .filter(SharedImages.image_uri == image_uri)
+                .all()
+            )
+
+            unique_name = [obj_bg.id for obj_bg in unique_name]
+            unique_file = [obj_bg.id for obj_bg in unique_file]
+
+            file_exist = False
+            if item.id in unique_file:
+                file_exist = True
+                unique_file.remove(item.id)
+
+            if item.id in unique_name:
+                unique_name.remove(item.id)
+
+            if unique_name or unique_file:
+                return self.response_400(message=_("image should be unique"))
+
+            if not file_exist:
+                if os.path.exists(file_path):
+                    filename, file_extension = os.path.splitext(filename)
+                    filename = (
+                        filename
+                        + "_"
+                        + generate_alphanum_crypt_string(6)
+                        + file_extension
+                    )
+                    image_uri = f"/{os.path.join(BACKGROUNDS_PATH, filename)}"
+                #
+                file_path = os.path.join(
+                    os.path.join(PATH_BASE, BACKGROUNDS_PATH), filename
+                )
+
+                file.save(file_path)
+
+            save_data = {
+                "image_name": image_name,
+                "image_uri": image_uri,
+                "description": description,
+                "height": height,
+                "width": width,
+            }
+
+            if not item:
+                return self.response_404()
+            try:
+                image_uri = item.image_uri
+                data = self._merge_update_item(item, save_data)
+                item = self.edit_model_schema.load(data, instance=item)
+                if os.path.exists(f"{PATH_BASE}{image_uri}"):
+                    os.remove(f"{PATH_BASE}{image_uri}")
+            except ValidationError as err:
+                return self.response_422(message=err.messages)
+            self.pre_update(item)
+            try:
+                self.datamodel.edit(item, raise_exception=True)
+                self.post_update(item)
+                return self.response(
+                    200,
+                    **{
+                        API_RESULT_RES_KEY: self.edit_model_schema.dump(
+                            item, many=False
+                        )
+                    },
+                )
+            except IntegrityError as e:
+                return self.response_422(message=str(e.orig))
+        return self.response_400(message=_("Wrong give fields"))

@@ -32,12 +32,12 @@ from alembic import op
 
 def upgrade():
     op.create_table(
-        "background_templates",
+        "shared_images",
         sa.Column("created_on", sa.DateTime(), nullable=False),
         sa.Column("changed_on", sa.DateTime(), nullable=False),
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("background_name", sa.String(length=250), nullable=True),
-        sa.Column("background_uri", sa.String(length=250), nullable=True),
+        sa.Column("image_name", sa.String(length=250), nullable=True),
+        sa.Column("image_uri", sa.String(length=250), nullable=True),
         sa.Column("changed_by_fk", sa.Integer(), nullable=True),
         sa.Column("created_by_fk", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(["changed_by_fk"], ["ab_user.id"]),
@@ -47,4 +47,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table("background_templates")
+    op.drop_table("shared_images")

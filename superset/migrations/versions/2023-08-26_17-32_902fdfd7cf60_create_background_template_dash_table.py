@@ -32,19 +32,19 @@ from alembic import op
 
 def upgrade():
     op.create_table(
-        "background_templates_dash",
+        "shared_images_dash",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column(
             "dashboard_id", sa.Integer(), sa.ForeignKey("dashboards.id"), nullable=False
         ),
         sa.Column(
-            "background_id",
+            "image_id",
             sa.Integer(),
-            sa.ForeignKey("background_templates.id"),
+            sa.ForeignKey("shared_images.id"),
             nullable=False,
         ),
     )
 
 
 def downgrade():
-    op.drop_table("background_templates_dash")
+    op.drop_table("shared_images_dash")

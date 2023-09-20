@@ -122,7 +122,6 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.annotation_layers.api import AnnotationLayerRestApi
         from superset.async_events.api import AsyncEventsRestApi
         from superset.available_domains.api import AvailableDomainsRestApi
-        from superset.background_templates.api import BackgroundTemplateRestApi
         from superset.cachekeys.api import CacheRestApi
         from superset.charts.api import ChartRestApi
         from superset.charts.data.api import ChartDataRestApi
@@ -155,6 +154,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.reports.logs.api import ReportExecutionLogRestApi
         from superset.row_level_security.api import RLSRestApi
         from superset.security.api import SecurityRestApi
+        from superset.shared_images.api import SharedImageRestApi
         from superset.sqllab.api import SqlLabRestApi
         from superset.tags.api import TagRestApi
         from superset.views.alerts import AlertView, ReportView
@@ -163,7 +163,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.views.api import Api
         from superset.views.background_templates import (
             BackgroundTemplateAsyncModelView,
-            BackgroundTemplateModelView,
+            SharedImagesModelView,
         )
         from superset.views.chart.views import SliceAsync, SliceModelView
         from superset.views.core import Superset
@@ -211,7 +211,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_api(ChartRestApi)
         appbuilder.add_api(ChartDataRestApi)
         appbuilder.add_api(CssTemplateRestApi)
-        appbuilder.add_api(BackgroundTemplateRestApi)
+        appbuilder.add_api(SharedImageRestApi)
         appbuilder.add_api(CurrentUserRestApi)
         appbuilder.add_api(DashboardFilterStateRestApi)
         appbuilder.add_api(DashboardPermalinkRestApi)
@@ -299,7 +299,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
             category_icon="",
         )
         appbuilder.add_view(
-            BackgroundTemplateModelView,
+            SharedImagesModelView,
             "Background Templates",
             label=__("Background Templates"),
             icon="fa-css3",

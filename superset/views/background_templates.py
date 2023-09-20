@@ -25,25 +25,25 @@ from superset.superset_typing import FlaskResponse
 from superset.views.base import DeleteMixin, SupersetModelView
 
 
-class BackgroundTemplateModelView(  # pylint: disable=too-many-ancestors
+class SharedImagesModelView(  # pylint: disable=too-many-ancestors
     SupersetModelView,
     DeleteMixin,
 ):
-    datamodel = SQLAInterface(models.BackgroundTemplate)
+    datamodel = SQLAInterface(models.SharedImages)
     include_route_methods = RouteMethod.CRUD_SET
 
-    class_permission_name = "BackgroundTemplate"
+    class_permission_name = "SharedImages"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP
 
-    list_title = _("Background Templates")
-    show_title = _("Show background Template")
-    add_title = _("Add background Template")
-    edit_title = _("Edit background Template")
+    list_title = _("Shared images")
+    show_title = _("Show shared images")
+    add_title = _("Add shared images")
+    edit_title = _("Edit shared images")
 
-    list_columns = ["background_name"]
-    edit_columns = ["background_name", "background_uri"]
+    list_columns = ["image_name"]
+    edit_columns = ["image_name", "image_uri"]
     add_columns = edit_columns
-    label_columns = {"background_name": _("Background Name")}
+    label_columns = {"image_name": _("image Name")}
 
     @expose("/list/")
     @has_access
@@ -52,10 +52,10 @@ class BackgroundTemplateModelView(  # pylint: disable=too-many-ancestors
 
 
 class BackgroundTemplateAsyncModelView(  # pylint: disable=too-many-ancestors
-    BackgroundTemplateModelView
+    SharedImagesModelView
 ):
     include_route_methods = {RouteMethod.API_READ}
-    class_permission_name = "BackgroundTemplate"
+    class_permission_name = "SharedImages"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP
 
-    list_columns = ["background_name", "background_uri"]
+    list_columns = ["image_name", "image_uri"]

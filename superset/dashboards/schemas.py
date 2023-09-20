@@ -165,7 +165,7 @@ class UserSchema(Schema):
     last_name = fields.String()
 
 
-class BackgroundSchema(Schema):
+class ImagesSchema(Schema):
     id = fields.Int()
     background_name = fields.String()
     background_uri = fields.String()
@@ -207,7 +207,7 @@ class DashboardGetResponseSchema(Schema):
     tags = fields.Nested(TagSchema, many=True)
     changed_on_humanized = fields.String(data_key="changed_on_delta_humanized")
     is_managed_externally = fields.Boolean(allow_none=True, dump_default=False)
-    background = fields.List(fields.Nested(BackgroundSchema()))
+    images = fields.List(fields.Nested(ImagesSchema()))
 
 
 class DatabaseSchema(Schema):
@@ -298,7 +298,7 @@ class DashboardPostSchema(BaseDashboardSchema):
     )
     is_managed_externally = fields.Boolean(allow_none=True, dump_default=False)
     external_url = fields.String(allow_none=True)
-    background = fields.List(fields.Int(allow_none=True))
+    images = fields.List(fields.Int(allow_none=True))
 
 
 class DashboardCopySchema(Schema):
@@ -359,7 +359,7 @@ class DashboardPutSchema(BaseDashboardSchema):
     )
     is_managed_externally = fields.Boolean(allow_none=True, dump_default=False)
     external_url = fields.String(allow_none=True)
-    background = fields.List(fields.Int(allow_none=True))
+    images = fields.List(fields.Int(allow_none=True))
 
 
 class ChartFavStarResponseResult(Schema):

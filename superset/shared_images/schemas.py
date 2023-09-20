@@ -16,18 +16,18 @@
 # under the License.
 
 openapi_spec_methods_override = {
-    "get": {"get": {"description": "Get a background template"}},
+    "get": {"get": {"description": "Get a shared images"}},
     "get_list": {
         "get": {
-            "description": "Get a list of background templates, use Rison or JSON "
+            "description": "Get a list of shared images, use Rison or JSON "
             "query parameters for filtering, sorting,"
             " pagination and for selecting specific"
             " columns and metadata.",
         }
     },
-    "post": {"post": {"description": "Create a background template"}},
-    "put": {"put": {"description": "Update a background template"}},
-    "delete": {"delete": {"description": "Delete background template"}},
+    "post": {"post": {"description": "Create a shared images"}},
+    "put": {"put": {"description": "Update a shared images"}},
+    "delete": {"delete": {"description": "Delete shared images"}},
 }
 
 get_delete_ids_schema = {"type": "array", "items": {"type": "integer"}}
