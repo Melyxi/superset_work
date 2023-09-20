@@ -57,10 +57,10 @@ const CssTemplateList = lazy(
     ),
 );
 
-const BackgroundTemplateList = lazy(
+const SharedImageList = lazy(
   () =>
     import(
-      /* webpackChunkName: "BackgroundTemplateList" */ 'src/pages/BackgroundTemplateList'
+      /* webpackChunkName: "SharedImageList" */ 'src/pages/SharedImageList'
     ),
 );
 
@@ -171,8 +171,8 @@ export const routes: Routes = [
     Component: CssTemplateList,
   },
   {
-    path: '/backgroundtemplatemodelview/list/',
-    Component: BackgroundTemplateList,
+    path: '/sharedimagemodelview/list/',
+    Component: SharedImageList,
   },
   {
     path: '/annotationlayer/list/',

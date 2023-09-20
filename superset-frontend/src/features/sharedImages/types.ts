@@ -24,14 +24,14 @@ type CreatedByUser = {
   last_name: string;
 };
 
-export type TemplateObject = {
+export type SharedImageObject = {
   id?: number;
   changed_on_delta_humanized?: string;
   changed_by?: CreatedByUser;
   created_on?: string;
   created_by?: CreatedByUser;
-  background_name: string;
-  background_uri: UploadFile[];
+  image_name: string;
+  image_uri: UploadFile[];
   description?: string;
   width?: string;
   height?: string;

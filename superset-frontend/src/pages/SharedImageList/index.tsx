@@ -16,12 +16,12 @@ import ListView, {
   Filters,
   FilterOperator,
 } from 'src/components/ListView';
-import BackgroundTemplateModal from 'src/features/backgroundTemplates/BackgroundTemplateModal';
-import { TemplateObject } from 'src/features/backgroundTemplates/types';
+import SharedImageModal from 'src/features/sharedImages/SharedImageModal';
+import { SharedImageObject } from 'src/features/sharedImages/types';
 
 const PAGE_SIZE = 25;
 
-interface BackgroundTemplatesListProps {
+interface SharedImageListProps {
   addDangerToast: (msg: string) => void;
   addSuccessToast: (msg: string) => void;
   user: {
@@ -31,61 +31,58 @@ interface BackgroundTemplatesListProps {
   };
 }
 
-function BackgroundTemplatesList({
+function SharedImageList({
   addDangerToast,
   addSuccessToast,
   user,
-}: BackgroundTemplatesListProps) {
+}: SharedImageListProps) {
   const {
-    state: {
-      loading,
-      resourceCount: templatesCount,
-      resourceCollection: templates,
-      bulkSelectEnabled,
-    },
+    state: { loading, resourceCount, resourceCollection, bulkSelectEnabled },
     hasPerm,
     fetchData,
     refreshData,
     toggleBulkSelect,
-  } = useListViewResource<TemplateObject>(
-    'background_template',
-    t('Background templates'),
+  } = useListViewResource<SharedImageObject>(
+    'shared_image',
+    t('Shared images'),
     addDangerToast,
   );
 
-  const [backgroundTemplateModalOpen, setBackgroundTemplateModalOpen] =
+  const [sharedImageModalOpen, setSharedImageModalOpen] =
     useState<boolean>(false);
-  const [currentBackgroundTemplate, setCurrentBackgroundTemplate] =
-    useState<TemplateObject | null>(null);
+  const [currentSharedImage, setCurrentSharedImage] =
+    useState<SharedImageObject | null>(null);
 
   const canCreate = hasPerm('can_write');
   const canEdit = hasPerm('can_write');
   const canDelete = hasPerm('can_write');
 
-  const [templateCurrentlyDeleting, setTemplateCurrentlyDeleting] =
-    useState<TemplateObject | null>(null);
+  const [sharedImageCurrentlyDeleting, setSharedImageCurrentlyDeleting] =
+    useState<SharedImageObject | null>(null);
 
-  const handleTemplateDelete = ({ id, background_name }: TemplateObject) => {
+  const handleSharedImageDelete = ({ id, image_name }: SharedImageObject) => {
     SupersetClient.delete({
-      endpoint: `/api/v1/background_template/${id}`,
+      endpoint: `/api/v1/shared_image/${id}`,
     }).then(
       () => {
         refreshData();
-        setTemplateCurrentlyDeleting(null);
-        addSuccessToast(t('Deleted: %s', background_name));
+        setSharedImageCurrentlyDeleting(null);
+        addSuccessToast(t('Deleted: %s', image_name));
       },
       createErrorHandler(errMsg =>
         addDangerToast(
-          t('There was an issue deleting %s: %s', background_name, errMsg),
+          t('There was an issue deleting %s: %s', image_name, errMsg),
         ),
       ),
     );
   };
 
-  const handleBulkTemplateDelete = (templatesToDelete: TemplateObject[]) => {
+  const handleBulkSharedImageDelete = (
+    sharedImagesToDelete: SharedImageObject[],
+  ) => {
     SupersetClient.delete({
-      endpoint: `/api/v1/background_template/?q=${rison.encode(
-        templatesToDelete.map(({ id }) => id),
+      endpoint: `/api/v1/shared_image/?q=${rison.encode(
+        sharedImagesToDelete.map(({ id }) => id),
       )}`,
     }).then(
       ({ json = {} }) => {
@@ -94,23 +91,26 @@ function BackgroundTemplatesList({
       },
       createErrorHandler(errMsg =>
         addDangerToast(
-          t('There was an issue deleting the selected templates: %s', errMsg),
+          t(
+            'There was an issue deleting the selected shared image: %s',
+            errMsg,
+          ),
         ),
       ),
     );
   };
 
-  function handleBackgroundTemplateEdit(backgroundTemplate: TemplateObject) {
-    setCurrentBackgroundTemplate(backgroundTemplate);
-    setBackgroundTemplateModalOpen(true);
+  function handleSharedImageEdit(sharedImage: SharedImageObject) {
+    setCurrentSharedImage(sharedImage);
+    setSharedImageModalOpen(true);
   }
 
-  const initialSort = [{ id: 'background_name', desc: true }];
+  const initialSort = [{ id: 'image_name', desc: true }];
 
   const columns = useMemo(
     () => [
       {
-        accessor: 'background_name',
+        accessor: 'image_name',
         Header: t('Name'),
       },
       {
@@ -197,14 +197,14 @@ function BackgroundTemplatesList({
       },
       {
         Cell: ({ row: { original } }: any) => {
-          const handleEdit = () => handleBackgroundTemplateEdit(original);
-          const handleDelete = () => setTemplateCurrentlyDeleting(original);
+          const handleEdit = () => handleSharedImageEdit(original);
+          const handleDelete = () => setSharedImageCurrentlyDeleting(original);
 
           const actions = [
             canEdit
               ? {
                   label: 'edit-action',
-                  tooltip: t('Edit template'),
+                  tooltip: t('Edit shared image'),
                   placement: 'bottom',
                   icon: 'Edit',
                   onClick: handleEdit,
@@ -213,7 +213,7 @@ function BackgroundTemplatesList({
             canDelete
               ? {
                   label: 'delete-action',
-                  tooltip: t('Delete template'),
+                  tooltip: t('Delete shared image'),
                   placement: 'bottom',
                   icon: 'Trash',
                   onClick: handleDelete,
@@ -234,7 +234,7 @@ function BackgroundTemplatesList({
   );
 
   const menuData: SubMenuProps = {
-    name: t('Background templates'),
+    name: t('Shared images'),
   };
 
   const subMenuButtons: SubMenuProps['buttons'] = [];
@@ -243,13 +243,13 @@ function BackgroundTemplatesList({
     subMenuButtons.push({
       name: (
         <>
-          <i className="fa fa-plus" /> {t('Background template')}
+          <i className="fa fa-plus" /> {t('Shared image')}
         </>
       ),
       buttonStyle: 'primary',
       onClick: () => {
-        setCurrentBackgroundTemplate(null);
-        setBackgroundTemplateModalOpen(true);
+        setCurrentSharedImage(null);
+        setSharedImageModalOpen(true);
       },
     });
   }
@@ -274,7 +274,7 @@ function BackgroundTemplatesList({
         operator: FilterOperator.relationOneMany,
         unfilteredLabel: t('All'),
         fetchSelects: createFetchRelated(
-          'background_template',
+          'shared_image',
           'created_by',
           createErrorHandler(errMsg =>
             t(
@@ -289,7 +289,7 @@ function BackgroundTemplatesList({
       {
         Header: t('Search'),
         key: 'search',
-        id: 'background_name',
+        id: 'image_name',
         input: 'search',
         operator: FilterOperator.contains,
       },
@@ -300,32 +300,34 @@ function BackgroundTemplatesList({
   return (
     <>
       <SubMenu {...menuData} />
-      <BackgroundTemplateModal
+      <SharedImageModal
         addDangerToast={addDangerToast}
-        backgroundTemplate={currentBackgroundTemplate}
-        onBackgroundTemplateAdd={() => refreshData()}
-        onHide={() => setBackgroundTemplateModalOpen(false)}
-        show={backgroundTemplateModalOpen}
+        sharedImage={currentSharedImage}
+        onSharedImageAdd={() => refreshData()}
+        onHide={() => setSharedImageModalOpen(false)}
+        show={sharedImageModalOpen}
       />
-      {templateCurrentlyDeleting && (
+      {sharedImageCurrentlyDeleting && (
         <DeleteModal
-          description={t('This action will permanently delete the template.')}
+          description={t(
+            'This action will permanently delete the shared image.',
+          )}
           onConfirm={() => {
-            if (templateCurrentlyDeleting) {
-              handleTemplateDelete(templateCurrentlyDeleting);
+            if (sharedImageCurrentlyDeleting) {
+              handleSharedImageDelete(sharedImageCurrentlyDeleting);
             }
           }}
-          onHide={() => setTemplateCurrentlyDeleting(null)}
+          onHide={() => setSharedImageCurrentlyDeleting(null)}
           open
-          title={t('Delete Template?')}
+          title={t('Delete shared image?')}
         />
       )}
       <ConfirmStatusChange
         title={t('Please confirm')}
         description={t(
-          'Are you sure you want to delete the selected templates?',
+          'Are you sure you want to delete the selected shared images?',
         )}
-        onConfirm={handleBulkTemplateDelete}
+        onConfirm={handleBulkSharedImageDelete}
       >
         {confirmDelete => {
           const bulkActions: ListViewProps['bulkActions'] = canDelete
@@ -340,11 +342,11 @@ function BackgroundTemplatesList({
             : [];
 
           return (
-            <ListView<TemplateObject>
-              className="background-templates-list-view"
+            <ListView<SharedImageObject>
+              className="shared-images-list-view"
               columns={columns}
-              count={templatesCount}
-              data={templates}
+              count={resourceCount}
+              data={resourceCollection}
               fetchData={fetchData}
               filters={filters}
               initialSort={initialSort}
@@ -361,4 +363,4 @@ function BackgroundTemplatesList({
   );
 }
 
-export default withToasts(BackgroundTemplatesList);
+export default withToasts(SharedImageList);
