@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { SupersetClient, t } from '@superset-ui/core';
 import { createErrorHandler } from 'src/views/CRUD/utils';
-import { TemplateObject } from './types';
+import { SharedImageObject } from './types';
 
 const parsedErrorMessage = (
   errorMessage: Record<string, string[] | string> | string,
@@ -21,7 +21,7 @@ const parsedErrorMessage = (
 
 interface SingleViewResourceState {
   loading: boolean;
-  resource: TemplateObject | null;
+  resource: SharedImageObject | null;
   error: any | null;
 }
 
@@ -39,12 +39,12 @@ export function useResource(
     setState(currentState => ({ ...currentState, ...update }));
   }
 
-  function getFormData(resource: TemplateObject) {
+  function getFormData(resource: SharedImageObject) {
     const formData = new FormData();
-    formData.append('background_name', resource?.background_name);
+    formData.append('image_name', resource?.image_name);
     formData.append(
-      'background_uri',
-      resource?.background_uri?.[0].originFileObj as Blob,
+      'image_uri',
+      resource?.image_uri?.[0].originFileObj as Blob,
     );
     formData.append('description', resource.description ?? '');
     formData.append('width', resource.width ?? '');
@@ -81,7 +81,7 @@ export function useResource(
         loading: true,
       });
 
-      const baseEndpoint = `/api/v1/background_template/${resourceID}`;
+      const baseEndpoint = `/api/v1/shared_image/${resourceID}`;
       const endpoint =
         path_suffix !== '' ? `${baseEndpoint}/${path_suffix}` : baseEndpoint;
       return SupersetClient.get({
@@ -89,15 +89,15 @@ export function useResource(
       })
         .then(
           ({ json = {} }) => {
-            const { background_uri } = json.result;
-            return fetchImage(background_uri).then(imageFile => {
-              const resource: TemplateObject = {
+            const { image_uri } = json.result;
+            return fetchImage(image_uri).then(imageFile => {
+              const resource: SharedImageObject = {
                 ...json.result,
-                background_uri: [
+                image_uri: [
                   {
                     uid: '-1',
                     status: 'done',
-                    url: background_uri,
+                    url: image_uri,
                     name: imageFile.name,
                     size: imageFile.size,
                     originFileObj: imageFile,
@@ -117,7 +117,7 @@ export function useResource(
             handleErrorMsg(
               t(
                 'An error occurred while fetching %ss: %s',
-                t('background_template'),
+                t('shared_image'),
                 parsedErrorMessage(errMsg),
               ),
             );
@@ -135,28 +135,28 @@ export function useResource(
   );
 
   const createResource = useCallback(
-    (resource: TemplateObject, hideToast = false) => {
+    (resource: SharedImageObject, hideToast = false) => {
       // Set loading state
       updateState({
         loading: true,
       });
 
       return SupersetClient.post({
-        endpoint: `/api/v1/background_template/`,
+        endpoint: `/api/v1/shared_image/`,
         body: getFormData(resource),
       })
         .then(
           ({ json = {} }) => {
-            const { background_uri } = json.result;
-            return fetchImage(background_uri).then(imageFile => {
-              const resource: TemplateObject = {
+            const { image_uri } = json.result;
+            return fetchImage(image_uri).then(imageFile => {
+              const resource: SharedImageObject = {
                 id: json.id,
                 ...json.result,
-                background_uri: [
+                image_uri: [
                   {
                     uid: '-1',
                     status: 'done',
-                    url: background_uri,
+                    url: image_uri,
                     name: imageFile.name,
                     size: imageFile.size,
                     originFileObj: imageFile,
@@ -178,7 +178,7 @@ export function useResource(
               handleErrorMsg(
                 t(
                   'An error occurred while creating %ss: %s',
-                  t('background_template'),
+                  t('shared_image'),
                   parsedErrorMessage(errMsg),
                 ),
               );
@@ -199,7 +199,7 @@ export function useResource(
   const updateResource = useCallback(
     (
       resourceID: number,
-      resource: TemplateObject,
+      resource: SharedImageObject,
       hideToast = false,
       setLoading = true,
     ) => {
@@ -211,21 +211,21 @@ export function useResource(
       }
 
       return SupersetClient.put({
-        endpoint: `/api/v1/background_template/${resourceID}`,
+        endpoint: `/api/v1/shared_image/${resourceID}`,
         body: getFormData(resource),
       })
         .then(
           ({ json = {} }) => {
-            const { background_uri } = json.result;
-            return fetchImage(background_uri).then(imageFile => {
-              const resource: TemplateObject = {
+            const { image_uri } = json.result;
+            return fetchImage(image_uri).then(imageFile => {
+              const resource: SharedImageObject = {
                 ...json.result,
                 id: json.id,
-                background_uri: [
+                image_uri: [
                   {
                     uid: '-1',
                     status: 'done',
-                    url: background_uri,
+                    url: image_uri,
                     name: imageFile.name,
                     size: imageFile.size,
                     originFileObj: imageFile,
@@ -246,7 +246,7 @@ export function useResource(
               handleErrorMsg(
                 t(
                   'An error occurred while fetching %ss: %s',
-                  t('background_template'),
+                  t('shared_image'),
                   JSON.stringify(errMsg),
                 ),
               );
@@ -275,7 +275,7 @@ export function useResource(
 
   return {
     state,
-    setResource: (update: TemplateObject) =>
+    setResource: (update: SharedImageObject) =>
       updateState({
         resource: update,
       }),

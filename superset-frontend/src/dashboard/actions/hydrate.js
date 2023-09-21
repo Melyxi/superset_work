@@ -391,7 +391,7 @@ export const hydrateDashboard =
           isFiltersRefreshing: false,
           activeTabs: activeTabs || dashboardState?.activeTabs || [],
           datasetsStatus: ResourceStatus.LOADING,
-          background: dashboard.background,
+          images: dashboard.images,
         },
         dashboardLayout,
       },

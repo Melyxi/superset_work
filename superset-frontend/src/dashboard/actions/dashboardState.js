@@ -245,7 +245,7 @@ export function saveDashboardRequest(data, id, saveType) {
       dashboard_title,
       owners,
       roles,
-      background,
+      images,
       slug,
     } = data;
 
@@ -263,7 +263,7 @@ export function saveDashboardRequest(data, id, saveType) {
       roles: !isFeatureEnabled(FeatureFlag.DASHBOARD_RBAC)
         ? undefined
         : ensureIsArray(roles).map(r => (hasId(r) ? r.id : r)),
-      background: ensureIsArray(background).map(bg => (hasId(bg) ? bg.id : bg)),
+      images: ensureIsArray(images).map(img => (hasId(img) ? img.id : img)),
       slug: slug || null,
       metadata: {
         ...data.metadata,
@@ -392,7 +392,7 @@ export function saveDashboardRequest(data, id, saveType) {
               dashboard_title: cleanedData.dashboard_title,
               slug: cleanedData.slug,
               owners: cleanedData.owners,
-              background: cleanedData.background,
+              images: cleanedData.images,
               roles: cleanedData.roles,
               json_metadata: safeStringify({
                 ...(cleanedData?.metadata || {}),

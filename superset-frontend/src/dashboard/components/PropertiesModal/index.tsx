@@ -90,15 +90,15 @@ type DashboardInfo = {
   certificationDetails: string;
   isManagedExternally: boolean;
 };
-type Background = {
+type SharedImage = {
   id: number;
-  background_name: string;
-  background_uri: string;
+  image_name: string;
+  image_uri: string;
   description?: string;
   width?: string;
   height?: string;
 };
-type BackgroundOption = Background & {
+type BackgroundOption = SharedImage & {
   value: number;
   label: string;
 };
@@ -191,7 +191,7 @@ const PropertiesModal = ({
         certification_details,
         owners,
         roles,
-        background,
+        images,
         metadata,
         is_managed_externally,
       } = dashboardData;
@@ -208,7 +208,7 @@ const PropertiesModal = ({
       setDashboardInfo(dashboardInfo);
       setOwners(owners);
       setRoles(roles);
-      setBackground(background);
+      setBackground(images);
       setColorScheme(metadata.color_scheme);
 
       const metaDataCopy = omit(metadata, [
@@ -339,21 +339,19 @@ const PropertiesModal = ({
     return {
       ...bg,
       value: bg.id,
-      label: `${bg.background_name} - ${bg.background_uri.split('/').pop()}`,
+      label: `${bg.image_name} - ${bg.image_uri.split('/').pop()}`,
     };
   };
 
   const backgroundOptions: SelectOptionsPagePromise = () =>
     SupersetClient.get({
-      endpoint: `/api/v1/background_template/`,
+      endpoint: `/api/v1/shared_image/`,
     }).then(response => ({
-      data: (response.json.result as Background[]).map<BackgroundOption>(
+      data: (response.json.result as SharedImage[]).map<BackgroundOption>(
         item => ({
           ...item,
           value: item.id,
-          label: `${item.background_name} - ${item.background_uri
-            .split('/')
-            .pop()}`,
+          label: `${item.image_name} - ${item.image_uri.split('/').pop()}`,
         }),
       ),
       totalCount: response.json.length,
@@ -486,7 +484,7 @@ const PropertiesModal = ({
       colorNamespace,
       certifiedBy,
       certificationDetails,
-      background: background.map(({ value, label, ...other }) => other),
+      images: background.map(({ value, label, ...other }) => other),
       ...moreOnSubmitProps,
     };
     if (onlyApply) {
@@ -502,7 +500,7 @@ const PropertiesModal = ({
           slug: slug || null,
           json_metadata: currentJsonMetadata || null,
           owners: (owners || []).map(o => o.id),
-          background: background.map(({ value, label, ...other }) => other),
+          images: background.map(({ value, label, ...other }) => other),
           certified_by: certifiedBy || null,
           certification_details:
             certifiedBy && certificationDetails ? certificationDetails : null,
