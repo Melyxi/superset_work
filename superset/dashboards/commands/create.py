@@ -21,7 +21,7 @@ from flask_appbuilder.models.sqla import Model
 from marshmallow import ValidationError
 
 from superset.commands.base import BaseCommand, CreateMixin
-from superset.commands.utils import populate_backgrounds, populate_roles
+from superset.commands.utils import populate_images, populate_roles
 from superset.daos.dashboard import DashboardDAO
 from superset.daos.exceptions import DAOCreateFailedError
 from superset.dashboards.commands.exceptions import (
@@ -51,7 +51,7 @@ class CreateDashboardCommand(CreateMixin, BaseCommand):
         exceptions: list[ValidationError] = []
         owner_ids: Optional[list[int]] = self._properties.get("owners")
         role_ids: Optional[list[int]] = self._properties.get("roles")
-        backgrounds_ids: Optional[list[int]] = self._properties.get("background")
+        images_ids: Optional[list[int]] = self._properties.get("images")
 
         slug: str = self._properties.get("slug", "")
 
@@ -69,8 +69,8 @@ class CreateDashboardCommand(CreateMixin, BaseCommand):
 
         # Validate/Populate background
         try:
-            background = populate_backgrounds(backgrounds_ids)
-            self._properties["background"] = background
+            images = populate_images(images_ids)
+            self._properties["images"] = images
         except ValidationError as ex:
             exceptions.append(ex)
         try:

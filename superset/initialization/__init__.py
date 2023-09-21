@@ -161,10 +161,6 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.views.all_entities import TaggedObjectsModelView, TaggedObjectView
         from superset.views.annotations import AnnotationLayerView
         from superset.views.api import Api
-        from superset.views.background_templates import (
-            BackgroundTemplateAsyncModelView,
-            SharedImagesModelView,
-        )
         from superset.views.chart.views import SliceAsync, SliceModelView
         from superset.views.core import Superset
         from superset.views.css_templates import (
@@ -189,6 +185,10 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.views.log.api import LogRestApi
         from superset.views.log.views import LogModelView
         from superset.views.redirects import R
+        from superset.views.shared_images import (
+            SharedImageAsyncModelView,
+            SharedImageModelView,
+        )
         from superset.views.sql_lab.views import (
             SavedQueryView,
             SavedQueryViewApi,
@@ -299,9 +299,9 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
             category_icon="",
         )
         appbuilder.add_view(
-            SharedImagesModelView,
-            "Background Templates",
-            label=__("Background Templates"),
+            SharedImageModelView,
+            "Shared Images",
+            label=__("Shared Images"),
             icon="fa-css3",
             category="Manage",
             category_label=__("Manage"),
@@ -313,7 +313,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         #
         appbuilder.add_view_no_menu(Api)
         appbuilder.add_view_no_menu(CssTemplateAsyncModelView)
-        appbuilder.add_view_no_menu(BackgroundTemplateAsyncModelView)
+        appbuilder.add_view_no_menu(SharedImageAsyncModelView)
         appbuilder.add_view_no_menu(CsvToDatabaseView)
         appbuilder.add_view_no_menu(ExcelToDatabaseView)
         appbuilder.add_view_no_menu(ColumnarToDatabaseView)

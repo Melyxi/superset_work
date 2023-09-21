@@ -25,14 +25,14 @@ from superset.superset_typing import FlaskResponse
 from superset.views.base import DeleteMixin, SupersetModelView
 
 
-class SharedImagesModelView(  # pylint: disable=too-many-ancestors
+class SharedImageModelView(  # pylint: disable=too-many-ancestors
     SupersetModelView,
     DeleteMixin,
 ):
     datamodel = SQLAInterface(models.SharedImages)
     include_route_methods = RouteMethod.CRUD_SET
 
-    class_permission_name = "SharedImages"
+    class_permission_name = "SharedImage"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP
 
     list_title = _("Shared images")
@@ -51,11 +51,11 @@ class SharedImagesModelView(  # pylint: disable=too-many-ancestors
         return super().render_app_template()
 
 
-class BackgroundTemplateAsyncModelView(  # pylint: disable=too-many-ancestors
-    SharedImagesModelView
+class SharedImageAsyncModelView(  # pylint: disable=too-many-ancestors
+    SharedImageModelView
 ):
     include_route_methods = {RouteMethod.API_READ}
-    class_permission_name = "SharedImages"
+    class_permission_name = "SharedImage"
     method_permission_name = MODEL_VIEW_RW_METHOD_PERMISSION_MAP
 
     list_columns = ["image_name", "image_uri"]

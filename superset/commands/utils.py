@@ -24,6 +24,7 @@ from flask_appbuilder.security.sqla.models import Role, User
 from superset import security_manager
 from superset.commands.exceptions import (
     DatasourceNotFoundValidationError,
+    ImagesNotFoundValidationError,
     OwnersNotFoundValidationError,
     RolesNotFoundValidationError,
 )
@@ -78,24 +79,24 @@ def populate_roles(role_ids: list[int] | None = None) -> list[Role]:
     return roles
 
 
-def populate_backgrounds(
-    backgrounds_ids: list[int] | None = None,
+def populate_images(
+    images_ids: list[int] | None = None,
 ) -> list[SharedImages]:
     """
     Helper function for commands, will fetch all backgrounds from backgrounds id's
      :raises RolesNotFoundValidationError: If a background in the input list is not found
     :param backgrounds_ids: A List of backgrounds by id's
     """
-    backgrounds: list[SharedImages] = []
-    if backgrounds_ids:
-        backgrounds = (
+    images: list[SharedImages] = []
+    if images_ids:
+        images = (
             current_app.appbuilder.get_session.query(SharedImages)
-            .filter(SharedImages.id.in_(backgrounds_ids))
+            .filter(SharedImages.id.in_(images_ids))
             .all()
         )
-        if len(backgrounds) != len(backgrounds_ids):
-            raise RolesNotFoundValidationError()
-    return backgrounds
+        if len(images) != len(images_ids):
+            raise ImagesNotFoundValidationError()
+    return images
 
 
 def get_datasource_by_id(datasource_id: int, datasource_type: str) -> BaseDatasource:

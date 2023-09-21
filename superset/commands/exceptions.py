@@ -119,6 +119,13 @@ class RolesNotFoundValidationError(ValidationError):
         super().__init__([_("Some roles do not exist")], field_name="roles")
 
 
+class ImagesNotFoundValidationError(ValidationError):
+    status = 422
+
+    def __init__(self) -> None:
+        super().__init__([_("Some Images do not exist")], field_name="images")
+
+
 class DatasourceTypeInvalidError(ValidationError):
     status = 422
 
